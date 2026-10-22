@@ -1,64 +1,142 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nova Drop Privacy Policy</title>
+<title>Nova Drop: Privacy Policy</title>
+<meta name="description" content="Privacy policy for the Nova Drop puzzle game.">
 <style>
-  :root { --bg:#120c2a; --fg:#ece8ff; --muted:#b4acd8; --accent:#5ee89a; }
-  body { margin:0; background:var(--bg); color:var(--fg); font:17px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { max-width:720px; margin:0 auto; padding:40px 16px 64px; }
-  h1 { font-size:2rem; margin-bottom:4px; }
-  h2 { font-size:1.2rem; margin-top:32px; }
-  p, li { color:var(--muted); }
-  a { color:var(--accent); }
+  :root { color-scheme: light dark; --bg: #ffffff; --fg: #1d1f24; --muted: #555b66; --accent: #2457c5; --box: #f2f5fb; --line: #dfe3ea; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0e1220; --fg: #eef1f7; --muted: #b5bccb; --accent: #8db4ff; --box: #182036; --line: #2a3350; }
+  }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 18px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  main { max-width: 42rem; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
+  h1 { font-size: 1.9rem; line-height: 1.25; margin: 0.5rem 0 0.25rem; }
+  h2 { font-size: 1.3rem; margin: 2.2rem 0 0.6rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+  p, li { max-width: 40rem; }
+  li { margin: 0.35rem 0; }
+  a { color: var(--accent); }
+  .meta { color: var(--muted); margin-top: 0; }
+  .summary { background: var(--box); border-radius: 12px; padding: 0.4rem 1.2rem; }
+  nav ol { padding-left: 1.4rem; }
+  footer { margin-top: 3rem; color: var(--muted); font-size: 0.95rem; }
 </style>
 </head>
 <body>
 <main>
+
 <h1>Nova Drop Privacy Policy</h1>
-<p>Effective date: October 21, 2026</p>
+<p class="meta">Effective date: October 22, 2026</p>
 
-<p>Nova Drop ("the game") is made by an independent developer. This policy explains what information the game uses and why. In short: we don't ask for your name, email or any account, and we don't collect personal information ourselves. The game shows ads from Google AdMob, and Google may collect some device information to do that, as described below.</p>
+<p>Nova Drop ("the game", "we", "us") is a puzzle game for phones and tablets made by an independent developer. This policy explains what information the game uses, who receives it, and the choices you have. We have tried to write it in plain language. If anything is unclear, write to us at <strong>playnovadrop@gmail.com</strong>.</p>
 
-<h2>Information the game stores on your device</h2>
-<p>Your progress, coins, settings and high scores are saved only on your own device. They are not sent to us. Uninstalling the game deletes them.</p>
+<nav aria-label="Contents">
+<ol>
+  <li><a href="#short">The short version</a></li>
+  <li><a href="#device">Information stored only on your device</a></li>
+  <li><a href="#ads">Ads (Google AdMob)</a></li>
+  <li><a href="#purchases">In-app purchases</a></li>
+  <li><a href="#not">What we do not collect</a></li>
+  <li><a href="#children">Children</a></li>
+  <li><a href="#rights">Your rights</a></li>
+  <li><a href="#adid">How to reset or limit your advertising ID</a></li>
+  <li><a href="#retention">How long data is kept</a></li>
+  <li><a href="#transfers">Where data goes</a></li>
+  <li><a href="#security">Security</a></li>
+  <li><a href="#changes">Changes to this policy</a></li>
+  <li><a href="#contact">Contact</a></li>
+</ol>
+</nav>
 
-<h2>Advertising (Google AdMob)</h2>
-<p>The game is free and supported by ads served by Google AdMob. To show ads, measure them and prevent fraud, Google may collect and use:</p>
+<h2 id="short">1. The short version</h2>
+<div class="summary">
 <ul>
-  <li>your device's advertising ID (on Android) or identifier for advertisers (on iOS, only if you allow it);</li>
-  <li>your IP address and approximate location derived from it;</li>
-  <li>device and app details such as model, operating system and language;</li>
-  <li>how you interact with ads (for example, views and taps).</li>
+  <li><strong>No account and no sign-in.</strong> We never ask for your name, email, phone number, contacts, photos or precise location.</li>
+  <li><strong>Your progress stays on your device.</strong> Levels, coins, settings and scores are saved in a file on your phone. We don't have a copy.</li>
+  <li><strong>We don't run our own analytics or servers.</strong> We don't track how you play, and we don't build a profile of you.</li>
+  <li><strong>Ads come from Google AdMob.</strong> Google collects some device information to show ads, count them and prevent fraud. Where the law requires it, you're asked first whether ads may be personalized, and you can change that choice later.</li>
+  <li><strong>Purchases go through Apple or Google.</strong> We never see your card or bank details.</li>
+  <li><strong>Ads never change the game for you.</strong> We never use your device, your spending or your "ad value" to change difficulty, scores or which ads you see.</li>
 </ul>
-<p>Google's use of this information is covered by Google's own policy: <a href="https://policies.google.com/technologies/partner-sites">How Google uses information from sites or apps that use its services</a>.</p>
+</div>
 
-<h2>Your choices</h2>
+<h2 id="device">2. Information stored only on your device</h2>
+<p>The game keeps a save file and a few settings on your device: your level progress, stars, coins and other in-game items, high scores, settings (sound, music, vibration, comfort options), and counters the game needs to space out ad breaks fairly (for example, when the last ad played). It also keeps a list of completed purchase receipts so a purchase is never granted twice.</p>
+<p>None of this is sent to us. It stays until you delete the game or clear its data. If your phone's own backup (for example iCloud or Google device backup) is turned on, the backup may include this file. That backup is handled by Apple or Google under your account with them, not by us.</p>
+<p>When you tap <strong>Share</strong> on a Daily Nebula result, the game copies a short text card (your result, no link and no personal details) to your clipboard. You decide where to paste it.</p>
+<p><strong>Level stats (off unless you turn it on).</strong> This version of the game records and sends no level stats. A future version may offer a <strong>Share anonymous level stats</strong> switch in Settings, to help us balance levels; this policy will be updated first. It will be off unless you turn it on, nothing is recorded before you do, and turning it off again deletes anything waiting and the random ID. While it's on, the game keeps a short list (at most 200 entries) of recent results and sends:</p>
 <ul>
-  <li>Where the law requires it (for example in the EEA, UK and Switzerland), the game asks for your consent before personalized ads are shown. You can change your choice at any time from the game's settings (Privacy options).</li>
-  <li>On Android you can reset or delete your advertising ID in your device's Settings (Google, then Ads). On iOS you can turn off tracking in Settings (Privacy &amp; Security, then Tracking).</li>
-  <li>A paid "Remove Ads" option, where offered, turns off interstitial and banner ads.</li>
+  <li>for each Journey level you play: the level number, whether you won, lost or quit, how many drops you used, the stars you earned, whether you used undo or a booster, and whether you continued after running out;</li>
+  <li>for each Endless run: the sector you reached, a score range (for example "10,000 to 24,999", never your exact score), the difficulty tide, your Path, the perks you picked and whether you quit;</li>
+  <li>a random ID that changes every month and is not linked to you (not your device, advertising ID or name), and the game's version number. You can reset the ID in Settings; that also deletes anything still waiting to be sent.</li>
 </ul>
+<p>It would never include your device model, advertising ID, location, ad history, purchases, name or email, and it would never change difficulty or scores.</p>
 
-<h2>What we don't do</h2>
+<h2 id="ads">3. Ads (Google AdMob)</h2>
+<p>Nova Drop is free because it shows ads. Ads are provided by <strong>Google AdMob</strong>, part of Google LLC. When ads are enabled, Google's software in the game may automatically collect and receive:</p>
 <ul>
-  <li>We don't sell your information.</li>
-  <li>We don't use analytics or tracking tools of our own.</li>
-  <li>We don't change difficulty or scores based on ads or on your device.</li>
+  <li>your device's <strong>IP address</strong>, which may be used to estimate your general location (country or city, not your exact address);</li>
+  <li><strong>device identifiers</strong>, such as your device's advertising ID (Android advertising ID or Apple IDFA, where allowed) and an app-set ID;</li>
+  <li><strong>ad and interaction data</strong>, such as which ads were shown, taps on ads, video views and app launches;</li>
+  <li><strong>diagnostic and performance data</strong>, such as app launch time, hangs, energy use and crash reports.</li>
+</ul>
+<p>Google uses this information to show ads, measure them, keep reports, and prevent fraud and abuse. Depending on your choices, it may also use it to show more relevant (personalized) ads. Google describes its practices at <a href="https://policies.google.com/technologies/partner-sites">How Google uses information from sites or apps that use its services</a> and in the <a href="https://policies.google.com/privacy">Google Privacy Policy</a>.</p>
+<p><strong>Consent.</strong> Before any ad is requested, the game runs Google's consent tool (the User Messaging Platform). If you're in a region where consent is required, for example the European Economic Area, the United Kingdom or Switzerland, you'll see a message asking whether ads may be personalized. If you say no, Google may still show non-personalized or limited ads. If the law in your area requires it, the game offers a <strong>Privacy options</strong> button in Settings so you can change your answer at any time. In some US states you may see a message letting you opt out of the "sale" or "sharing" of your information for advertising.</p>
+<p><strong>On iPhone and iPad</strong>, the game will only use your advertising identifier (IDFA) if you allow it in Apple's "Allow tracking" prompt. You can say no and keep playing exactly the same game.</p>
+<p><strong>What we do not do:</strong> we don't receive your advertising ID or location. We don't measure your device or estimate how much you are worth to advertisers. We never make the game harder, change your scores, or time ads based on any of this. Optional reward ads only play when you tap them.</p>
+<p><strong>Remove Ads.</strong> If you buy Remove Ads, ad breaks stop. Optional reward videos stay available if you choose to watch them. When you watch one, Google's ad software still runs as described above.</p>
+<p><strong>Reporting an ad.</strong> If you see an ad that is inappropriate or not suitable for the game's age rating, you can use the ad's own "AdChoices" or feedback button, or write to us at playnovadrop@gmail.com with a description or screenshot.</p>
+
+<h2 id="purchases">4. In-app purchases</h2>
+<p>You can buy optional items (coin packs, a Starter Pack, Remove Ads). Payments are handled entirely by the <strong>Apple App Store</strong> or <strong>Google Play</strong>, under their own terms and privacy policies. We never receive your payment card, bank details or billing address.</p>
+<p>The game uses <strong>Unity In-App Purchasing</strong>, a plug-in from Unity Technologies, to talk to the store. Your device receives a confirmation of each purchase (a product name and a transaction number) so the game can deliver the item and restore it if you reinstall. Unity states that its purchasing plug-in may process some technical data, such as purchase history, device information, diagnostics and an approximate location derived from the connection, to make purchases work and for analytics. See the <a href="https://unity.com/legal/privacy-policy">Unity Privacy Policy</a>.</p>
+<ul>
+  <li>Apple: <a href="https://www.apple.com/legal/privacy/">Apple Privacy Policy</a></li>
+  <li>Google Play: <a href="https://policies.google.com/privacy">Google Privacy Policy</a></li>
 </ul>
 
-<h2>In-app purchases</h2>
-<p>Purchases are handled entirely by Google Play or the Apple App Store. We never see your payment details.</p>
+<h2 id="not">5. What we do not collect</h2>
+<p>We do not ask for or collect: your name, email address, phone number, postal address, contacts, photos, camera, microphone, precise (GPS) location, health data or messages. The game has no chat, no user profiles and no social login. We do not sell your personal information. We do not use your information to decide what the game shows you.</p>
 
-<h2>Children</h2>
-<p>The game is intended for a general audience and is not directed at children under 13. We do not knowingly collect personal information from children. If you believe a child has provided information through the game, contact us and we will help.</p>
+<h2 id="children">6. Children</h2>
+<p>Nova Drop is made for adults and is <strong>not directed at children under 13</strong> (or under the age of digital consent in your country, such as 16 in parts of Europe). We do not knowingly collect personal information from children. Because the game has no accounts, we hold no personal information that could identify a child. If you believe a child has used the game and want help limiting ad data, contact us at playnovadrop@gmail.com. You can also reset the device's advertising ID (see <a href="#adid">section 8</a>).</p>
 
-<h2>Changes to this policy</h2>
-<p>If this policy changes, the new version will be posted on this page with a new effective date.</p>
+<h2 id="rights">7. Your rights</h2>
+<p>Depending on where you live, privacy laws such as the EU and UK GDPR and California's CCPA/CPRA give you rights over your personal information. These may include the right to know what is collected, to access it, to correct or delete it, to object to or restrict its use, to withdraw consent, to opt out of the "sale" or "sharing" of personal information for targeted advertising, and to not be treated differently for using these rights. You may also complain to your local data-protection authority.</p>
+<p>How to use them with Nova Drop:</p>
+<ul>
+  <li><strong>Your game data</strong> lives only on your device. You can delete it at any time by deleting the game or clearing its data in your phone's settings. We have no copy to send or delete.</li>
+  <li><strong>Ad consent:</strong> use <strong>Settings &gt; Privacy options</strong> in the game (shown where the law requires it) to change or withdraw consent. You can also reset or delete your advertising ID (<a href="#adid">section 8</a>).</li>
+  <li><strong>Data held by Google, Apple or Unity:</strong> these companies decide how they use the data they receive, and you can contact them directly through the links above. Google offers controls at <a href="https://myadcenter.google.com/">My Ad Center</a>.</li>
+  <li><strong>Anything else:</strong> write to playnovadrop@gmail.com. We'll reply within 30 days (sooner where the law requires). We'll never charge you or treat you differently for asking.</li>
+</ul>
+<p><strong>Legal bases (EEA/UK):</strong> personalized ads, and storing or reading information on your device for ads, are based on your <strong>consent</strong>, collected through Google's consent message. Showing non-personalized ads, measuring ads and preventing fraud may rely on the <strong>legitimate interests</strong> of us and our ad partner in funding a free game. Delivering purchases relies on <strong>performing our contract</strong> with you.</p>
 
-<h2>Contact</h2>
-<p>Questions about this policy: <a href="mailto:playnovadrop@gmail.com">playnovadrop@gmail.com</a></p>
+<h2 id="adid">8. How to reset or limit your advertising ID</h2>
+<ul>
+  <li><strong>Android:</strong> open <strong>Settings &gt; Privacy &gt; Ads</strong> (on some phones <strong>Settings &gt; Google &gt; Ads</strong>). From there you can <strong>Reset advertising ID</strong> or <strong>Delete advertising ID</strong>. Menu names vary a little by phone and Android version.</li>
+  <li><strong>iPhone and iPad:</strong> open <strong>Settings &gt; Privacy &amp; Security &gt; Tracking</strong>. You can turn off <strong>Allow Apps to Request to Track</strong>, or turn it off for Nova Drop only. Apple's own ad settings are in <strong>Settings &gt; Privacy &amp; Security &gt; Apple Advertising</strong>.</li>
+</ul>
+<p>After a reset, ads may be less relevant, but the game works the same.</p>
+
+<h2 id="retention">9. How long data is kept</h2>
+<p>We keep no personal information on our own systems. Your save file stays on your device until you delete it. Google, Apple and Unity keep the data they receive according to their own privacy policies.</p>
+
+<h2 id="transfers">10. Where data goes</h2>
+<p>Google, Apple and Unity may process data in the United States and other countries, using their own legal safeguards for international transfers. We only use partners whose own privacy commitments protect this data at least as well as this policy does.</p>
+
+<h2 id="security">11. Security</h2>
+<p>Ad and purchase data is sent over encrypted connections (TLS), according to Google's and Unity's published disclosures. Your save file is protected by your device's own security. No method is perfectly secure, but we keep the data we handle to a minimum.</p>
+
+<h2 id="changes">12. Changes to this policy</h2>
+<p>If the game starts using any new kind of information, for example a cloud save or sign-in, we'll update this policy and change the effective date before that version is released. Big changes will also be mentioned in the store's "What's new" notes.</p>
+
+<h2 id="contact">13. Contact</h2>
+<p>Nova Drop<br>Email: playnovadrop@gmail.com</p>
+
+<footer>Nova Drop. This page has no cookies, scripts or trackers.</footer>
 </main>
 </body>
 </html>
