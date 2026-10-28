@@ -71,7 +71,7 @@ export const CAFE_AREAS = [
       task('terrace_lights', 3, 'lights', st('bulbs', 'lanterns', 'shells')),
       task('terrace_door', 3, 'door', st('blue', 'sage', 'yellow')),
     ],
-    lines: { intro: LINES, done: LINES },
+    lines: { intro: LINES, done: LINES, meet: { a: TEXT, b: TEXT } },
   },
   {
     id: 'counter', book: 1, chapter: 2, name: TEXT, cam: cam(1000, -60), keeper: 'bloop', reward: reward(),
@@ -85,7 +85,7 @@ export const CAFE_AREAS = [
       task('counter_shelves', 3, 'cupShelves', st('willow', 'rainbow', 'seaglass')),
       task('counter_bar', 3, 'bar', st('oak', 'duckegg', 'tiled')),
     ],
-    lines: { intro: LINES, done: LINES },
+    lines: { intro: LINES, done: LINES, meet: { a: TEXT, b: TEXT } },
   },
   {
     id: 'kitchen', book: 1, chapter: 3, name: TEXT, cam: cam(2000, -60), keeper: 'ember', reward: reward(),
@@ -99,7 +99,7 @@ export const CAFE_AREAS = [
       task('kitchen_dresser', 3, 'dresser', st('pine', 'sage', 'butter')),
       task('kitchen_bread', 3, 'bread', st('sourdough', 'plait', 'buns')),
     ],
-    lines: { intro: LINES, done: LINES },
+    lines: { intro: LINES, done: LINES, meet: { a: TEXT, b: TEXT } },
   },
   {
     id: 'garden', book: 1, chapter: 4, name: TEXT, cam: cam(3000, -60), keeper: 'zip', reward: reward(),
@@ -113,7 +113,7 @@ export const CAFE_AREAS = [
       task('garden_tree', 3, 'tree', st('lemon', 'blossom', 'orange')),
       task('garden_borders', 3, 'borders', st('cottage', 'blue', 'sunset')),
     ],
-    lines: { intro: LINES, done: LINES },
+    lines: { intro: LINES, done: LINES, meet: { a: TEXT, b: TEXT } },
   },
   {
     id: 'pier', book: 1, chapter: 5, name: TEXT, cam: cam(4000, -60), keeper: 'nimbus', reward: reward(),
@@ -127,7 +127,7 @@ export const CAFE_AREAS = [
       task('pier_hut', 3, 'teaHut', st('candy', 'blue', 'sorbet')),
       task('pier_flags', 3, 'pierFlags', st('pastel', 'nautical', 'rainbow')),
     ],
-    lines: { intro: LINES, done: LINES },
+    lines: { intro: LINES, done: LINES, meet: { a: TEXT, b: TEXT } },
   },
   {
     id: 'rooftop', book: 1, chapter: 6, name: TEXT, cam: cam(1000, -440, 1.15), keeper: 'nova', reward: reward(),
@@ -141,7 +141,7 @@ export const CAFE_AREAS = [
       task('rooftop_telescope', 3, 'telescope', st('brass', 'midnight', 'copper')),
       task('rooftop_chart', 3, 'starChart', st('parchment', 'midnight', 'watercolour')),
     ],
-    lines: { intro: LINES, done: LINES },
+    lines: { intro: LINES, done: LINES, meet: { a: TEXT, b: TEXT } },
   },
   // ------------------------------------------------------------------ Book 2 "The Harbour"
   {
@@ -156,7 +156,7 @@ export const CAFE_AREAS = [
       task('boathouse_boat', 3, 'dinghy', st('varnish', 'redwhite', 'bluewhite')),
       task('boathouse_roof', 3, 'boathouseRoof', st('slate', 'terracotta', 'tin')),
     ],
-    lines: { intro: LINES, done: LINES },
+    lines: { intro: LINES, done: LINES, meet: { a: TEXT, b: TEXT } },
   },
   {
     id: 'flowerStall', book: 2, chapter: 8, name: TEXT, cam: cam(6000, -60), keeper: null, reward: reward(),
@@ -170,7 +170,7 @@ export const CAFE_AREAS = [
       task('flowerStall_wreaths', 3, 'wreaths', st('shell', 'lavender', 'berry')),
       task('flowerStall_table', 3, 'pottingTable', st('terracotta', 'enamel', 'jars')),
     ],
-    lines: { intro: LINES, done: LINES },
+    lines: { intro: LINES, done: LINES, meet: { a: TEXT, b: TEXT } },
   },
   {
     id: 'beachHuts', book: 2, chapter: 9, name: TEXT, cam: cam(7000, -60), keeper: null, reward: reward(),
@@ -184,7 +184,7 @@ export const CAFE_AREAS = [
       task('beachHuts_hut3', 3, 'hut3', st('sea', 'rose', 'navy')),
       task('beachHuts_parasol', 3, 'parasols', st('fringe', 'stripe', 'scallop')),
     ],
-    lines: { intro: LINES, done: LINES },
+    lines: { intro: LINES, done: LINES, meet: { a: TEXT, b: TEXT } },
   },
   {
     id: 'lighthouse', book: 2, chapter: 10, name: TEXT, cam: cam(8000, -110), keeper: null, reward: reward(),
@@ -198,7 +198,7 @@ export const CAFE_AREAS = [
       task('lighthouse_lamp', 3, 'beacon', st('gold', 'white', 'rose')),
       task('lighthouse_bench', 3, 'pointBench', st('oak', 'blue', 'stone')),
     ],
-    lines: { intro: LINES, done: LINES },
+    lines: { intro: LINES, done: LINES, meet: { a: TEXT, b: TEXT } },
   },
   {
     id: 'bandstand', book: 2, chapter: 11, name: TEXT, cam: cam(9000, -60), keeper: null, reward: reward(),
@@ -212,7 +212,7 @@ export const CAFE_AREAS = [
       task('bandstand_lights', 3, 'bandLights', st('bulbs', 'stars', 'lanterns')),
       task('bandstand_flowers', 3, 'flowerRing', st('red', 'blue', 'mixed')),
     ],
-    lines: { intro: LINES, done: LINES },
+    lines: { intro: LINES, done: LINES, meet: { a: TEXT, b: TEXT } },
   },
   {
     id: 'ferryDock', book: 2, chapter: 12, name: TEXT, cam: cam(10000, -60), keeper: null, reward: reward(),
@@ -226,7 +226,7 @@ export const CAFE_AREAS = [
       task('ferryDock_gangway', 3, 'gangway', st('white', 'rope', 'wood')),
       task('ferryDock_ferry', 3, 'ferry', st('red', 'blue', 'green')),
     ],
-    lines: { intro: LINES, done: LINES },
+    lines: { intro: LINES, done: LINES, meet: { a: TEXT, b: TEXT } },
   },
   // Books 3–9: 38 more areas, one per chapter 13–50, 20 stars each (pacing in cafeDataBooks.js).
 ].map(cafeText).concat(MORE_AREAS);

@@ -55,6 +55,7 @@ import { PACKS } from './meta/packs.js';
 import { Hud } from './ui/hud.js';
 import { Coach } from './ui/coach.js';
 import { tutorialDue, markTutorialDone, createLesson, COPY as LESSON_COPY, cafeRevealDue } from './meta/firstRun.js';
+import { cafeStageHeld } from './meta/cafeTour.js';
 import { menuCardFree, markMenuCard, returnGiftDue, greeting } from './meta/menuCards.js';
 import { nextUnlockMoment } from './meta/homeNav.js';
 import { nextFitCells } from './game/nextHint.js';
@@ -628,7 +629,7 @@ let menuVisit = null; // { quiet, card, plan } for the current Home visit (null 
 /** Home's own onboarding cards (first run, café reveal, v3 welcome) keep the stage to themselves. */
 function homeOwnCardDue() {
   const firstRun = (save.runs || 0) === 0 && !(save.cafe && save.cafe.intro);
-  return firstRun || cafeRevealDue(save) || v3CardDue(save);
+  return firstRun || cafeRevealDue(save) || v3CardDue(save) || cafeStageHeld(save); // + the café tour and new-area intros
 }
 function returnGiftFirst() {
   return returnGiftDue(save) && !tutorialDue(save) && !homeOwnCardDue();

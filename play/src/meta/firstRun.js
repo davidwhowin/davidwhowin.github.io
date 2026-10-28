@@ -59,12 +59,11 @@ export function markTutorialDone(save) {
 
 /**
  * The first café reveal on Home (T7/T8): the lesson is behind her, Level 1 is cleared, a star is waiting and nothing
- * has been restored yet. Ends by itself with the first restore. Only early on (Level 2 is next), so a returning
- * player who simply never restored anything is not treated as new.
+ * has been restored yet. Ends by itself with the first restore. Any level (fix F4: a player who
+ * arrives with 2+ stars gets the same help).
  */
 export function cafeRevealDue(save, sum = null) {
   if (!save || save.tutorialDone !== true) return false;
-  if (((save.journey && save.journey.level) || 1) !== 2) return false;
   const done = save.cafe && save.cafe.done;
   if (done && Object.keys(done).length) return false;
   const s = sum || cafeSummary(save);

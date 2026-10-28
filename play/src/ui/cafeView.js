@@ -21,7 +21,12 @@
 //     autoCelebrate = true, // play a pending area celebration on mount / update()
 //     bottomInset,          // px (or () => px) the host covers along the bottom; the scene centres above it
 //     sfx(name), haptic(kind)  // optional feedback hooks: 'build' | 'restyle' | 'celebrate' | 'tap'
+//     startLine = true,     // false: say nothing on mount (the host has its own line; the intro is still marked seen)
+//     areaIntros = false,   // the new-area intro (docs/UX_RESTORE_TUTORIAL.md A1-A2) on mount and after "Lovely!"
+//     quietBuild,           // () => bool: true while the café tour runs (no Pip line after a build; it speaks itself)
 //   });
+//   onChange also gets: 'sheet' { mode } (the sheet opened or changed page), 'settled' { taskId } (a build finished,
+//   brighten included), 'met' { areaId } (an area intro was answered; save.cafe.met changed)
 //   cafe.update()                 re-read the save (e.g. after a level was won) and refresh everything
 //   cafe.openBuildSheet(taskId?)  open the sheet for the current area (optionally on one task's styles)
 //   cafe.closeSheet()
@@ -29,6 +34,10 @@
 //   cafe.panTo(areaId, { instant }) ease the camera to an area (instant in Calm mode)
 //   cafe.celebrate(areaId?)       play the finish moment for a completed area (pays its reward once)
 //   cafe.setReduced(v)  cafe.resize()  cafe.destroy()  cafe.cam (live { x, y, zoom })
+//   cafe.setSheetTip(text|null)   Pip's one-line strip at the top of the build sheet (the café tour C4/C5)
+//   cafe.guideRow()               ring + hand on the first affordable row the next time the sheet lists tasks
+//   cafe.showAreaMeet(areaId)     the new-area intro (A1 reveal, then the A2 goal card)
+//   cafe.pulseProp(propId|null)   a dashed ring on one prop (the restyle tip)
 import {
   CAFE_AREAS, CAFE_AREA_BY_ID, CAFE_TASK_BY_ID, OUT_OF_CONTENT_LINE,
 } from '../meta/cafeData.js';
@@ -37,6 +46,7 @@ import {
   markIntroSeen, setCafeCam, cafeLine, areaReward, taskCost, brightenPlayed, markBrightened,
 } from '../meta/cafe.js';
 import { nextFix } from '../meta/menuCards.js';
+import { areaIntroDue, areaMeetInfo, markAreaMet, tipSeen, markTip } from '../meta/cafeTour.js';
 import { KEEPER_BY_ID } from '../meta/keepers.js';
 import {
   WORLD, WATER, PAINT_ORDER, KEEPER_SPOTS, PIP_SPOTS, areaBounds, cacheBounds, renderArea, paintBackdrop, paintWater,
@@ -78,7 +88,9 @@ function el(tag, cls, html) {
 
 export function mountCafe(container, opts = {}) {
   if (typeof document === 'undefined' || !container) return null;
-  const o = { controls: true, bubble: true, autoCelebrate: true, ...opts };
+  const o = { controls: true, bubble: true, autoCelebrate: true, startLine: true, areaIntros: false, ...opts };
+  const quiet = () => { try { return !!(o.quietBuild && o.quietBuild()); } catch { return false; } };
+  const lowerThe = (s) => String(s || '').replace(/^The /, 'the ');
   let save = o.save;
   const live = o.keeperLive || keeperLiveDefault;
   const tw = new Tweener();
@@ -120,7 +132,13 @@ export function mountCafe(container, opts = {}) {
   sheet.setAttribute('aria-modal', 'false');
   const party = el('div', 'cafe-party');
   party.setAttribute('role', 'dialog');
-  root.append(canvas, top, bubble, bottom, sheet, party);
+  // the new-area intro (A1 title plate, A2 goal card); both sit over the scene, never over the host's Play button
+  const plate = el('div', 'cafe-plate');
+  plate.setAttribute('aria-hidden', 'true');
+  const meet = el('div', 'cafe-meet');
+  meet.setAttribute('role', 'dialog');
+  meet.hidden = true;
+  root.append(canvas, top, plate, bubble, bottom, meet, sheet, party);
   container.appendChild(root);
   const ctx = canvas.getContext('2d');
 
@@ -375,14 +393,23 @@ export function mountCafe(container, opts = {}) {
       }
       if (cafeNight() !== nightWas) { nightWas = cafeNight(); dirty = true; } // Evening calm switched: one re-bake
       if (dirty || !reduced() || tw.items.length || petals.length) { draw(); dirty = false; }
+      const ov = overArea();
+      if (ov !== overWas) { overWas = ov; renderHud(); }
     }
     raf = requestAnimationFrame(frame);
   }
 
   // ---------------------------------------------------------------- HUD
+  // the area the camera is over (its id), for the "opens after …" label when it is a locked one
+  let overWas = null;
+  function overArea() {
+    for (const a of CAFE_AREAS) { const b = areaBounds(a.id); if (b && cam.x >= b[0] && cam.x < b[2]) return a.id; }
+    return null;
+  }
   function renderHud() {
     const avail = starsAvailable(save);
-    const cur = currentArea(save);
+    // while the celebration card is open the card behind it keeps the finished area (fix F8: don't spoil the reveal)
+    const cur = celebrating && CAFE_AREA_BY_ID[celebrating] ? CAFE_AREA_BY_ID[celebrating] : currentArea(save);
     const st = cur ? infoFor(cur.id).state : null;
     top.innerHTML = '';
     if (o.onClose) {
@@ -395,8 +422,12 @@ export function mountCafe(container, opts = {}) {
     const ntHud = cur && o.nextLine ? st.tasks.find((t) => t.state !== 'done') : null;
     const nextHud = ntHud && ntHud.state !== 'affordable'
       ? `<div class="cafe-title-sub cafe-title-next">${esc(tr('cafe.nextLine', { name: ntHud.name, n: fmt(ntHud.cost) }))}</div>` : '';
+    // the camera is over an area that hasn't opened yet: say plainly when it opens (no padlock: it reads as a paywall)
+    const ov = cur && !celebrating && overWas && overWas !== cur.id ? infoFor(overWas).state : null;
+    const lockHud = ov && ov.status === 'locked'
+      ? `<div class="cafe-title-sub cafe-title-lock">${esc(tr('cafe.opensAfter', { area: ov.name, current: lowerThe(cur.name) }))}</div>` : '';
     const title = el('div', 'cafe-title', cur
-      ? `<div class="cafe-title-name">${esc(cur.name)}</div><div class="cafe-prog" aria-hidden="true"><span style="width:${Math.round((st.built / st.total) * 100)}%"></span></div><div class="cafe-title-sub">${esc(tr('cafe.builtOf', { built: st.built, total: st.total }))}</div>${nextHud}`
+      ? `<div class="cafe-title-name">${esc(cur.name)}</div><div class="cafe-prog" aria-hidden="true"><span style="width:${Math.round((st.built / st.total) * 100)}%"></span></div><div class="cafe-title-sub">${esc(tr('cafe.builtOf', { built: st.built, total: st.total }))}</div>${nextHud}${lockHud}`
       : `<div class="cafe-title-name">${esc(tr('cafe.name'))}</div><div class="cafe-title-sub">${esc(tr('cafe.allDone'))}</div>`);
     const stars = el('div', 'cafe-stars', `${STAR}<b>${fmt(avail)}</b>`);
     stars.setAttribute('aria-label', trp('cafe.starsToSpend', avail, { n: fmt(avail) }));
@@ -417,10 +448,18 @@ export function mountCafe(container, opts = {}) {
         bottom.appendChild(play);
       }
     }
+    placeBubble();
   }
 
-  let bubbleTimer = 0, bubbleQueue = [];
-  let guideLine = null; // the first restore (T8): ring + hand on the first affordable task, then this line once
+  let bubbleTimer = 0, bubbleQueue = [], bubbleItem = null;
+  let guideLine = null; // the first restore (T8): this line once after the build
+  let guideRing = false; // ring + hand on the first affordable task the next time the sheet lists tasks
+  const calmBody = () => typeof document !== 'undefined' && !!document.body && document.body.classList.contains('calm');
+  // fix F1: the bubble sits just under the area card, never over its "Next:" line (the card grows with text size)
+  function placeBubble() {
+    const tb = top.getBoundingClientRect(), rb = root.getBoundingClientRect();
+    if (tb.height > 0 && rb.height > 0) bubble.style.top = `${Math.round(tb.bottom - rb.top + 6)}px`;
+  }
   function say(lines, ms = 5200) {
     if (!o.bubble) return;
     bubbleQueue = Array.isArray(lines) ? lines.slice() : [lines];
@@ -429,9 +468,12 @@ export function mountCafe(container, opts = {}) {
   function nextBubble(ms = 5200) {
     clearTimeout(bubbleTimer);
     const item = bubbleQueue.shift();
+    bubbleItem = null;
     if (!item) { bubble.classList.remove('show'); return; }
-    // a plain string is Pip; a visitor's line is { who, text, note, card }
-    const v = typeof item === 'string' ? { who: 'Pip', text: item } : item;
+    // a plain string is Pip; a visitor's line is { who, text, note, card }; a teaching line may carry
+    // { btn, onBtn } (a Next button; a tap anywhere on the bubble does the same)
+    const v = typeof item === 'string' ? { who: 'Pip', text: item } : { who: 'Pip', ...item };
+    bubbleItem = v;
     bubble.innerHTML = `<span class="cafe-bubble-who">${esc(v.who)}</span>${esc(v.text)}`
       + (v.note ? `<span class="cafe-bubble-note">${esc(v.note)}</span>` : '');
     if (v.card && o.onVisitorCard) {
@@ -439,12 +481,26 @@ export function mountCafe(container, opts = {}) {
       b.addEventListener('click', (e) => { e.stopPropagation(); nextBubble(); try { o.onVisitorCard(v.card); } catch (err) { console.error(err); } });
       bubble.appendChild(b);
     }
+    if (v.btn) {
+      const b = el('button', 'cafe-btn cafe-btn-main cafe-bubble-next', esc(v.btn));
+      b.addEventListener('click', (e) => { e.stopPropagation(); bubbleAct(); });
+      bubble.appendChild(b);
+    }
+    placeBubble();
     bubble.classList.add('show');
-    if (typeof item === 'string') actor('pip').talk(Math.min(2400, v.text.length * 45));
-    if (!(ms > 0)) return; // ms <= 0: the line stays until tapped (the first-run lines, docs/UX_FIRST_RUN.md)
-    bubbleTimer = setTimeout(() => nextBubble(ms), v.card ? Math.max(ms, 9000) : ms);
+    if (v.who === 'Pip') actor('pip').talk(Math.min(2400, v.text.length * 45));
+    // ms <= 0, a button, or Calm: the line stays until tapped (fix F3). Chatter reads for at least 1.5 s + 0.35 s a word.
+    if (!(ms > 0) || v.btn || calmBody()) return;
+    const words = String(v.text).split(/\s+/).filter(Boolean).length;
+    const dur = Math.max(ms, 1500 + 350 * words);
+    bubbleTimer = setTimeout(() => nextBubble(ms), v.card ? Math.max(dur, 9000) : dur);
   }
-  bubble.addEventListener('click', () => nextBubble());
+  function bubbleAct() {
+    const f = bubbleItem && bubbleItem.onBtn;
+    nextBubble();
+    if (f) { try { f(); } catch (e) { console.error(e); } }
+  }
+  bubble.addEventListener('click', () => bubbleAct());
   function talkTo(g) {
     const r = talkToVisitor(save, g.id);
     if (!r) return;
@@ -457,6 +513,8 @@ export function mountCafe(container, opts = {}) {
   // ---------------------------------------------------------------- the build sheet
   let sheetMode = null;   // null | 'list' | 'styles' | 'restyle' | 'done'
   let sheetTask = null, sheetStyle = 0;
+  let sheetModeWas = null;
+  let sheetTip = null;    // { text, onSkip } Pip's strip at the top of the sheet (the café tour)
   function setFocus() {
     const open = !!sheetMode && sheet.classList.contains('open');
     const sh = open ? sheet.getBoundingClientRect().height : 0;
@@ -494,6 +552,7 @@ export function mountCafe(container, opts = {}) {
   }
   function closeSheet() {
     sheetMode = null; sheetTask = null; pulse = null;
+    if (sheetModeWas) { sheetModeWas = null; emit({ type: 'sheet', mode: null }); }
     sheet.classList.remove('open');
     overlay();
     renderHud();
@@ -508,7 +567,23 @@ export function mountCafe(container, opts = {}) {
     const z = Math.max(cam.zoom, (CAFE_AREA_BY_ID[t.areaId].cam.zoom || 1) * 1.25);
     moveCam({ x: (b[0] + b[2]) / 2, y: (b[1] + b[3]) / 2 || a.y, zoom: Math.min(1.7, z) }, 0.9);
   }
+  /** Render the sheet, then tell the host when its page changed (the café tour advances on it). */
   function renderSheet() {
+    renderSheetBody();
+    if (sheetMode !== sheetModeWas) { sheetModeWas = sheetMode; emit({ type: 'sheet', mode: sheetMode }); }
+  }
+  function addSheetTip() {
+    if (!sheetTip) return;
+    const tip = el('div', 'cafe-sheet-tip', `<span class="cafe-bubble-who">Pip</span><span class="cafe-sheet-tip-text">${esc(sheetTip.text)}</span>`);
+    tip.setAttribute('role', 'status');
+    if (sheetTip.onSkip) {
+      const sk = el('button', 'cafe-skip', esc(tr('cafeTour.skip')));
+      sk.addEventListener('click', () => { const f = sheetTip && sheetTip.onSkip; sheetTip = null; renderSheet(); if (f) f(); });
+      tip.appendChild(sk);
+    }
+    sheet.appendChild(tip);
+  }
+  function renderSheetBody() {
     sheet.innerHTML = '';
     const cur = currentArea(save);
     const avail = starsAvailable(save);
@@ -533,8 +608,9 @@ export function mountCafe(container, opts = {}) {
       head.innerHTML = `<div><h2 class="cafe-h">${esc(st.name)}</h2><div class="cafe-sub"><span class="cafe-count" role="img" aria-label="${esc(tr('cafe.builtOf', { built: fmt(st.built), total: fmt(st.total) }))}"><span aria-hidden="true">✓ ${esc(tr('cafe.countOf', { built: fmt(st.built), total: fmt(st.total) }))}</span></span> ${STAR} ${esc(tr('cafe.toSpend', { n: fmt(avail) }))}</div></div>`;
       head.appendChild(close);
       sheet.appendChild(head);
+      addSheetTip();
       const list = el('ol', 'cafe-tasks');
-      const guided = guideLine ? st.tasks.find((t) => t.state === 'affordable') : null;
+      const guided = guideRing ? st.tasks.find((t) => t.state === 'affordable') : null;
       for (const t of st.tasks) {
         const li = el('li');
         const b = el('button', `cafe-task is-${t.state}${guided && guided.id === t.id ? ' cafe-guide' : ''}`);
@@ -549,7 +625,7 @@ export function mountCafe(container, opts = {}) {
           haptic('tap');
           if (t.state === 'done') { sheetMode = 'restyle'; sheetTask = t.id; sheetStyle = t.style; }
           else if (t.state === 'affordable') { sheetMode = 'styles'; sheetTask = t.id; sheetStyle = 0; }
-          else { focusProp(t.id); say(trp('pip.needMore', t.need, { n: t.need })); return; }
+          else { focusProp(t.id); say(trp('pip.needMore', t.need, { n: t.need }), 0); return; }
           renderSheet(); requestAnimationFrame(setFocus);
         });
         li.appendChild(b); list.appendChild(li);
@@ -577,6 +653,7 @@ export function mountCafe(container, opts = {}) {
     head.appendChild(el('div', 'cafe-head-mid', `<h2 class="cafe-h">${esc(t.name)}</h2><div class="cafe-sub">${esc(isRe ? tr('cafe.restyleSub') : tr('cafe.styleSub'))}</div>`));
     head.appendChild(close);
     sheet.appendChild(head);
+    addSheetTip();
     const row = el('div', 'cafe-styles');
     t.styles.forEach((s, i) => {
       const b = el('button', 'cafe-style' + (i === sheetStyle ? ' is-on' : ''));
@@ -633,6 +710,7 @@ export function mountCafe(container, opts = {}) {
     refresh();
     actor('pip').event('tap');
     const doneN = Object.keys((save.cafe && save.cafe.done) || {}).length;
+    guideRing = false;
     if (r.areaComplete && r.reward) {
       if (firstBuild) { holdUnlit = false; refresh(); } // (an area never finishes on its first restore)
       busy = false;
@@ -640,22 +718,26 @@ export function mountCafe(container, opts = {}) {
       return;
     }
     const a = CAFE_AREA_BY_ID[info.areaId];
+    // the café tour speaks for itself after a build (C6 comes once the brighten is over)
+    const hush = quiet();
     if (firstBuild) {
       // back out to the whole frontage first, so she sees it brighten and the sign flip
       await moveCam({ x: a.cam.x, y: a.cam.y, zoom: a.cam.zoom || 1 }, 1.0);
       const line = taskId === 'terrace_awning' ? (guideLine || brightenLine()) : cafeLine('task', doneN);
       guideLine = null;
-      say(line, taskId === 'terrace_awning' ? 0 : 5200);
+      if (!hush) say(line, taskId === 'terrace_awning' ? 0 : 5200);
       await brighten();
       busy = false;
+      emit({ type: 'settled', taskId });
       return;
     }
     // the first-build line names the awning: say it only when the awning is what was built
-    if (guideLine && taskId === 'terrace_awning') say(guideLine, 0); else say(cafeLine('task', doneN));
+    if (!hush) { if (guideLine && taskId === 'terrace_awning') say(guideLine, 0); else say(cafeLine('task', doneN)); }
     guideLine = null;
     if (!reduced()) await tw.wait(0.6);
     await moveCam({ x: a.cam.x, y: a.cam.y, zoom: a.cam.zoom || 1 }, 1.0);
     busy = false;
+    emit({ type: 'settled', taskId });
   }
   /** The one-time first-restore brighten: the frontage's weathering lifts and "Closed" becomes "Opening soon".
    *  The weathered terrace is copied once and faded out over the brightened bake (instant under Calm). */
@@ -741,6 +823,9 @@ export function mountCafe(container, opts = {}) {
       + (regular && res.keeperNew ? `<div class="cafe-gift cafe-gift-regular"><b>${esc(regular.name)}</b> ${esc(tr('cafe.movedIn'))}</div>`
         : regular ? `<div class="cafe-gift cafe-gift-regular">${esc(tr('cafe.popsBy', { name: regular.name }))}</div>` : '');
     card.appendChild(gifts);
+    // fix F8: where we go next, in one muted line (the area card behind keeps the finished area until "Lovely!")
+    const nx = currentArea(save);
+    card.appendChild(el('p', 'cafe-card-next', esc(nx ? tr('cafe.nextArea', { area: lowerThe(nx.name) }) : tr('cafe.allCorners'))));
     const row = el('div', 'cafe-card-row');
     if (o.onShare) {
       const s = el('button', 'cafe-btn cafe-btn-soft', esc(tr('cafe.sendPostcard')));
@@ -770,9 +855,71 @@ export function mountCafe(container, opts = {}) {
     if (next && o.autoCelebrate) { celebrate(next); return; }
     const cur = currentArea(save);
     if (cur) {
+      // a new area she hasn't met: its two-beat intro (A1 reveal, A2 goal card) instead of the old passing lines
+      if (o.areaIntros && areaIntroDue(save) === cur.id) { showAreaMeet(cur.id); return; }
       await panTo(cur.id);
       say(cur.lines.intro.slice(0, 2));
     } else say(OUT_OF_CONTENT_LINE, 7000);
+  }
+
+  // ---------------------------------------------------------------- the new-area intro (docs/UX_RESTORE_TUTORIAL.md A1-A2)
+  let meeting = null;
+  async function showAreaMeet(id) {
+    const area = CAFE_AREA_BY_ID[id];
+    if (!area || meeting || celebrating) return false;
+    meeting = id;
+    if (sheetMode) closeSheet();
+    meet.hidden = true; meet.innerHTML = '';
+    renderHud();
+    // A1: the camera glides to the new area (a cut in reduced motion) and its name fades in as a title plate
+    plate.textContent = area.name;
+    plate.classList.remove('show');
+    requestAnimationFrame(() => { if (meeting === id) plate.classList.add('show'); });
+    await panTo(id);
+    if (meeting !== id) return false;
+    const lines = area.lines && area.lines.meet;
+    say([{ text: (lines && lines.a) || area.lines.intro[0], btn: tr('cafeTour.next'), onBtn: () => meetCard(id) }], 0);
+    return true;
+  }
+  /** A2: a small goal card along the bottom. Every value comes from the rules (areaMeetInfo / areaReward). */
+  function meetCard(id) {
+    const area = CAFE_AREA_BY_ID[id];
+    const m = areaMeetInfo(save, id);
+    plate.classList.remove('show');
+    if (!area || !m) { meeting = null; return; }
+    const regular = m.keeper && KEEPER_BY_ID[m.keeper];
+    const reward = regular ? tr('cafeMeet.reward', { name: regular.name, coins: fmt(m.coins) }) : tr('cafeMeet.rewardCoins', { coins: fmt(m.coins) });
+    meet.innerHTML = `<h2 class="cafe-meet-name">${esc(m.name)}</h2>`
+      + (m.first ? `<div class="cafe-meet-line">${esc(trp('cafeMeet.fixes', m.total, { n: fmt(m.total), cost: fmt(m.first.cost) }))}</div>` : '')
+      + `<div class="cafe-meet-line">${esc(reward)}</div>`
+      + `<div class="cafe-meet-line cafe-meet-have">${esc(tr('cafeMeet.have', { n: fmt(m.available) }))}</div>`;
+    const finish = () => {
+      markAreaMet(save, id);
+      meeting = null;
+      meet.hidden = true; meet.innerHTML = '';
+      bubbleQueue = []; nextBubble();
+      emit({ type: 'met', areaId: id });
+      renderHud();
+    };
+    const row = el('div', 'cafe-meet-row');
+    let main;
+    if (m.first && m.first.affordable) {
+      main = el('button', 'cafe-btn cafe-btn-main', esc(tr('cafeMeet.start', { name: lowerThe(m.first.name) })));
+      main.addEventListener('click', () => { haptic('tap'); finish(); guideRing = true; openBuildSheet(); });
+    } else if (o.onPlay) {
+      main = el('button', 'cafe-btn cafe-btn-main', esc(tr('cafe.playLevel')));
+      main.addEventListener('click', () => { finish(); o.onPlay(); });
+    }
+    if (main) row.appendChild(main);
+    const later = el('button', main ? 'cafe-skip cafe-meet-later' : 'cafe-btn cafe-btn-main', esc(tr('cafeMeet.later')));
+    later.addEventListener('click', () => { haptic('tap'); finish(); });
+    row.appendChild(later);
+    meet.appendChild(row);
+    const inset = Math.max(0, Number(typeof o.bottomInset === 'function' ? o.bottomInset() : o.bottomInset) || 0);
+    meet.style.bottom = `${Math.round(inset) + 12}px`; // just above Home's bottom bar
+    meet.hidden = false;
+    say([{ text: (area.lines.meet && area.lines.meet.b) || '' }].filter((x) => x.text), 0);
+    requestAnimationFrame(() => { if (main) main.focus({ preventScroll: true }); });
   }
 
   // ---------------------------------------------------------------- input: drag, pinch, tap, wheel
@@ -833,7 +980,7 @@ export function mountCafe(container, opts = {}) {
     camMove = null; clampCam(); dirty = true;
   }
   function tapAt(sx, sy) {
-    if (busy || celebrating) return;
+    if (busy || celebrating || meeting) return;
     const [wx, wy] = toWorld(sx, sy);
     // a visitor first (their box, padded to at least 24px a side so the target stays ~48px), a Keeper, then a prop
     const padW = 24 / Math.max(0.05, scale());
@@ -852,7 +999,14 @@ export function mountCafe(container, opts = {}) {
       const t = st.tasks.find((x) => x.id === hit.taskId);
       if (t.style >= 0) { openBuildSheet(t.id); return; }
       if (cur && id === cur.id) { openBuildSheet(t.state === 'affordable' ? t.id : undefined); if (t.state !== 'affordable') { pulse = { propId: t.prop }; focusProp(t.id); } return; }
-      if (st.status === 'locked' && cur) { say(tr('pip.laterArea', { area: st.name.replace(/^The /, 'the '), current: cur.name.replace(/^The /, 'the ') })); return; }
+      if (st.status === 'locked' && cur) {
+        // the first tap on a locked area teaches why once (T-later); after that, the short passing line. Both stay until tapped.
+        if (!tipSeen(save, 'later')) {
+          markTip(save, 'later'); emit({ type: 'tip', key: 'later' });
+          say(tr('cafeTour.tipLater', { area: lowerThe(st.name), current: lowerThe(cur.name) }), 0);
+        } else say(tr('pip.laterArea', { area: lowerThe(st.name), current: lowerThe(cur.name) }), 0);
+        return;
+      }
       return;
     }
   }
@@ -884,16 +1038,20 @@ export function mountCafe(container, opts = {}) {
   fit();
   renderHud();
   raf = requestAnimationFrame(frame);
-  if (save && save.cafe && !save.cafe.intro) {
+  if (save && save.cafe && !save.cafe.intro && !(o.areaIntros && !pendingCelebration(save) && areaIntroDue(save))) {
     const first = currentArea(save);
     if (first) {
       markIntroSeen(save); emit({ type: 'intro' });
       panTo(first.id, { instant: true });
-      say(first.lines.intro.slice(), 5600);
+      if (o.startLine) say(first.lines.intro.slice(), 5600); // (Home: the café tour C1 tells this story instead, fix F9)
     }
   } else if (o.autoCelebrate && pendingCelebration(save)) {
     setTimeout(() => { if (alive) celebrate(); }, reduced() ? 0 : 500);
-  } else {
+  } else if (o.areaIntros && areaIntroDue(save)) {
+    // she left before the new area was introduced (or closed the app mid-celebration): it shows now (and stands in for the old intro line)
+    if (!save.cafe.intro) markIntroSeen(save);
+    setTimeout(() => { if (alive && areaIntroDue(save)) showAreaMeet(areaIntroDue(save)); }, reduced() ? 0 : 400);
+  } else if (o.startLine) {
     const cur = currentArea(save);
     // docs/UX_RETENTION.md item 4: with a fix she can afford, Pip names it ("We have enough stars to re-hang the striped awning. Shall we?")
     const fix = cur ? nextFix(save) : null;
@@ -908,10 +1066,25 @@ export function mountCafe(container, opts = {}) {
       wake();
       refresh();
       if (o.autoCelebrate && !celebrating && !busy && pendingCelebration(save)) celebrate();
+      else if (o.areaIntros && !celebrating && !busy && !meeting && areaIntroDue(save)) showAreaMeet(areaIntroDue(save));
     },
     openBuildSheet(taskId) { wake(); return openBuildSheet(taskId); },
     /** The first restore (docs/UX_FIRST_RUN.md T8): guide the next build sheet; `line` is said once after the build. */
-    guideFirstBuild(line) { guideLine = line || null; },
+    guideFirstBuild(line) { guideLine = line || null; guideRing = true; },
+    /** Ring + hand on the first affordable row the next time the sheet lists tasks (no line after the build). */
+    guideRow() { guideRing = true; if (sheetMode === 'list') renderSheet(); },
+    /** Pip's strip at the top of the build sheet (null removes it); onSkip adds a "Skip tour" link. */
+    setSheetTip(text, onSkip = null) { sheetTip = text ? { text, onSkip } : null; if (sheetMode) renderSheet(); },
+    /** The new-area intro for `areaId` (A1 then A2); false when it can't show now. */
+    showAreaMeet(areaId) { wake(); return showAreaMeet(areaId); },
+    /** True while an area intro is on screen. */
+    get meeting() { return !!meeting; },
+    /** A dashed ring on one prop (null clears it): the restyle tip points at something already fixed. */
+    pulseProp(propId) { pulse = propId && PROPS[propId] ? { propId } : null; dirty = true; },
+    /** Clear Pip's bubble (the tour's own bubble takes over). */
+    hush() { bubbleQueue = []; nextBubble(); },
+    /** True while a build is playing out (wipe, brighten). */
+    get busy() { return busy; },
     say(lines, ms) { wake(); return say(lines, ms); }, // Pip says a line (or lines, one after another); the home uses it for the first-run greeting
     /** Talk to café visitor `id` as if tapped (no-op when they aren't here). */
     talkTo(id) { wake(); const g = visitorList().find((x) => x.id === id); if (g && o.bubble) talkTo(g); return !!g; },

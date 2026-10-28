@@ -22,7 +22,7 @@ const task = (areaId, key, cost, prop, styles) => ({
 /** Area index i (0-based in CAFE_AREAS) sits at world x (i − 1) × 1000 (the rooftop is the only area off the line). */
 const at = (i) => (i - 1) * 1000;
 function area(i, id, book, tasks, camY = -60) {
-  return cafeText({ id, book, chapter: i + 1, name: TEXT, cam: cam(at(i), camY), keeper: null, reward: reward(), tasks: tasks.map((t) => task(id, ...t)).sort((a, b) => a.cost - b.cost), lines: { intro: LINES, done: LINES } });
+  return cafeText({ id, book, chapter: i + 1, name: TEXT, cam: cam(at(i), camY), keeper: null, reward: reward(), tasks: tasks.map((t) => task(id, ...t)).sort((a, b) => a.cost - b.cost), lines: { intro: LINES, done: LINES, meet: { a: TEXT, b: TEXT } } });
 }
 
 /**

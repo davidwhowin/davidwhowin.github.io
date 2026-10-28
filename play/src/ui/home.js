@@ -11,6 +11,9 @@
 import { el, fmt, esc, tap, ICONS } from './dom.js';
 import { t as tr, tp as trp } from './i18n.js'; // `tr`: `t` is a local name in this file
 import { mountCafe } from './cafeView.js';
+import { startCafeTour } from './cafeTour.js'; // the first-time café tour (docs/UX_RESTORE_TUTORIAL.md Part 1)
+import { tourStep, cafeStageHeld, homeTipDue, markTip } from '../meta/cafeTour.js';
+import { currentArea } from '../meta/cafe.js';
 import { cafeSummary, areaState } from '../meta/cafe.js';
 import { CAFE_AREA_BY_ID } from '../meta/cafeData.js';
 import { paintAreaPostcard } from '../game/cafeArt.js';
@@ -57,6 +60,9 @@ export const firstStarLine = (n) => (n > 1 ? tr('home.firstStars', { n: fmt(n) }
 
 let cafe = null;      // the live café on Home (destroyed on every re-render)
 let cafeHost = null;
+let tour = null;      // the café tour (or its replay) running over Home, if any
+let homeNode = null;
+let homeSave = null;
 
 const reducedNow = (save) => () => !!(save.settings && save.settings.calm)
   || (typeof document !== 'undefined' && document.body && document.body.classList && document.body.classList.contains('calm'));
@@ -108,6 +114,8 @@ export function renderHome(app, kit) {
   const save = app.save;
   const look = uiLook(save);
   if (cafe) { try { cafe.destroy(); } catch (_) { /* already gone */ } cafe = null; }
+  if (tour) { tour.destroy(); tour = null; }
+  homeSave = save;
   const lvl = Math.min(save.journey.level, LEVEL_COUNT);
   const level = getLevel(lvl);
   const { carried } = ensureOrbits(save);
@@ -118,11 +126,16 @@ export function renderHome(app, kit) {
   // the first café reveal (docs/UX_FIRST_RUN.md T7): the café, Play and Restore only, a gold ring on Restore and one
   // line from Pip that stays until tapped. It lasts until the first thing is restored.
   const reveal = !firstRun && cafeRevealDue(save, sum);
+  // docs/UX_RESTORE_TUTORIAL.md: the café tour (C1–C6) replaces the reveal's single line; while the tour, a new-area
+  // intro or a celebration is waiting, Home holds its other cards and lines (one card at a time, F7)
+  const tourAt = firstRun ? null : tourStep(save);
+  const held = !firstRun && cafeStageHeld(save);
   const node = kit.open(el(`<div class="screen menu home${saved ? ' has-resume' : ''}">
     <div class="home-cafe" data-cafe-host></div>
     <div class="home-bottom" data-bottom><div class="home-note" data-note></div><div class="home-bar" data-bar></div></div>
   </div>`));
   cafeHost = node.querySelector('[data-cafe-host]');
+  homeNode = node;
   const bar = node.querySelector('[data-bar]');
   const bottom = node.querySelector('[data-bottom]');
   const note = node.querySelector('[data-note]');
@@ -149,17 +162,18 @@ export function renderHome(app, kit) {
     bar.innerHTML = `
       ${saved || rb ? `<div class="home-row">
         ${saved ? `<button class="btn ghost home-resume" data-resume aria-label="${esc(tr('home.resumeLabel', { label: saved.label, detail: saved.detail }))}">${ICONS.play || '▶'}<span><b>${esc(tr('home.resume'))}</b><small>${esc(saved.label)}</small></span></button>` : ''}
-        ${rb ? `<button class="btn ${rb.primary ? 'gold' : 'ghost'} home-restore${reveal ? ' nav-new' : ''}" data-restore aria-label="${esc(trp('home.restoreLabel', rb.stars, { n: fmt(rb.stars) }))}">${CUP_ICON}<span>${esc(tr('home.restore'))}</span><b class="home-stars">★ ${fmt(rb.stars)}</b></button>` : ''}
+        ${rb ? `<button class="btn ${rb.primary ? 'gold' : 'ghost'} home-restore${reveal && !tourStep(save) ? ' nav-new' : ''}" data-restore aria-label="${esc(trp('home.restoreLabel', rb.stars, { n: fmt(rb.stars) }))}">${CUP_ICON}<span>${esc(tr('home.restore'))}</span><b class="home-stars">★ ${fmt(rb.stars)}</b></button>` : ''}
       </div>` : ''}
       <button class="btn primary hero home-play" data-play>
         <span>${esc(tr('home.play', { n: fmt(lvl) }))}</span><small>${goals}${kindTag}</small>
       </button>
       <nav class="home-icons" aria-label="${esc(tr('home.nav'))}">${icons.map((k) => ico[k]()).join('')}</nav>`;
     tap(bar.querySelector('[data-play]'), () => {
+      if (tour) tour.leave(); // C6 counts as done; an earlier step resumes on the next visit
       if (skipIntroOnPlay(save)) { S.closeAll(); app.startLevel(lvl); } else S.showLevelIntro(app, lvl);
     }, click);
-    tap(bar.querySelector('[data-resume]'), () => app.resumeRun(), click);
-    tap(bar.querySelector('[data-restore]'), () => openCafeRestore({ guide: reveal }), click);
+    tap(bar.querySelector('[data-resume]'), () => { if (tour) tour.leave(); app.resumeRun(); }, click);
+    tap(bar.querySelector('[data-restore]'), () => openCafeRestore(), click);
     tap(bar.querySelector('[data-shop]'), () => { settle(); S.showShop(app, 'treats', () => S.showMenu(app)); }, click);
     tap(bar.querySelector('[data-looks]'), () => { settle(); S.showWardrobe(app); }, click);
     tap(bar.querySelector('[data-today]'), () => { const row = settle('today'); showTodaySheet(app, row); }, click);
@@ -181,7 +195,7 @@ export function renderHome(app, kit) {
   // calm pacing (docs/UX_RETENTION.md item 2; main.js): at most one feature card a day, none on the visit after
   // "Done for now" or when this visit already has its card (the return-day gift). Moments not shown simply wait.
   const cardOk = !app.menuCardOk || app.menuCardOk();
-  const moment = cardOk && !firstRun && !reveal && !v3CardDue(save) && (anyBuilt(save) || !sum.canBuild) ? (nextUnlockMoment(save) || seasonMoment(save)) : null;
+  const moment = cardOk && !firstRun && !reveal && !held && !v3CardDue(save) && (anyBuilt(save) || !sum.canBuild) ? (nextUnlockMoment(save) || seasonMoment(save)) : null;
   if (moment) { glow = moment.at.filter((k) => homeIcons(save).includes(k)); glowRow = moment.row || null; }
   drawBar();
 
@@ -194,7 +208,12 @@ export function renderHome(app, kit) {
       bubble: true,
       bottomInset: () => (bottom.getBoundingClientRect ? bottom.getBoundingClientRect().height : 0),
       reducedMotion: reducedNow(save),
+      startLine: !firstRun && !tourAt, // the tour and the first-run line speak instead of the café's own greeting
+      areaIntros: true,                // a new area's two-beat intro (A1–A2) plays here, after any celebration
+      quietBuild: () => !!(tour && tour.active && !tour.replay),
       onChange: (evt) => {
+        if (tour && evt) tour.onCafe(evt);
+        if (evt && (evt.type === 'sheet' || evt.type === 'settled')) return; // nothing saved by these
         app.persist();
         if (evt && evt.type === 'claim') S.refreshCoins(save);
         drawBar();
@@ -212,20 +231,23 @@ export function renderHome(app, kit) {
   }
   if (cafe) {
     if (firstRun) cafe.say(FIRST_RUN_LINES.slice(), 0); // stays until tapped
-    else if (reveal) cafe.say(LESSON_COPY.reveal, 0);
+    else if (tourAt) startTour(app, tourAt, false);
+    else if (held) { /* the celebration or the new-area intro has the stage (cafeView plays it) */ }
+    else if (reveal) cafe.say(LESSON_COPY.reveal, 0); // a skipped tour keeps the old helpers
     else if (sum.canBuild && !anyBuilt(save) && !sum.pending) cafe.say(firstStarLine(sum.available), 7000);
+    else showHomeTip(app, homeTipDue(save));
   }
 
   // Tonight's bake: one quiet strip in the note slot when a bake is ready (never during the first-run reveal)
   function addBakeStrip() {
-    if (firstRun || reveal || momentCard || note.querySelector('[data-bake-strip]')) return;
+    if (firstRun || reveal || held || momentCard || note.querySelector('[data-bake-strip]')) return;
     let strip = null;
     try { strip = bakeStripNode(app, cafe ? (line, ms) => cafe && cafe.say(line, ms) : null); } catch (e) { console.error(e); }
     if (!strip) return;
     note.appendChild(strip);
     if (cafe) requestAnimationFrame(() => cafe && cafe.resize());
   }
-  if (!firstRun && !reveal && v3CardDue(save)) showV3Card(app);
+  if (!firstRun && !reveal && !held && v3CardDue(save)) showV3Card(app);
   else if (moment) {
     // seen the moment it shows (and saved), so leaving Home any other way never shows it twice
     if (moment.key === 'season') markSeasonMet(save); else markUnlockSeen(save, moment.key);
@@ -248,13 +270,54 @@ export function renderHome(app, kit) {
 }
 
 /**
- * Open the café's build sheet on Home (the result card's "Restore the café" lands here). opts.guide: the first
- * restore (T8): a ring and the hand on the first task she can afford, then Pip's one line after it is built.
+ * Open the café's build sheet on Home (Home's Restore button, and the result card's "Restore the café").
+ * While the tour runs, opening the sheet is its C3 → C4 step (the tour hears the sheet open). Otherwise, while nothing
+ * is built yet (any star count, either route: fix F4), a ring and the hand on the first task she can afford, then
+ * Pip's one line after it is built. opts.guide forces the guide.
  */
 export function openCafeRestore(opts = {}) {
   if (!cafe) return;
-  if (opts.guide && cafe.guideFirstBuild) cafe.guideFirstBuild(LESSON_COPY.firstBuild);
+  if (cafe.meeting) return; // the new-area card has its own Start button
+  if (tour && tour.active && !tour.replay) { cafe.openBuildSheet(); return; }
+  const guide = opts.guide || (homeSave && !anyBuilt(homeSave));
+  if (guide && cafe.guideFirstBuild) cafe.guideFirstBuild(LESSON_COPY.firstBuild);
   cafe.openBuildSheet();
+}
+
+/** Start the café tour over Home at `step` ('c1' | 'c3' | 'c6'); `replay` never writes save.cafe.tut. */
+function startTour(app, step, replay) {
+  if (!cafe || !homeNode) return null;
+  if (tour) tour.destroy();
+  const t = startCafeTour({
+    host: homeNode, cafe, save: app.save, step, replay,
+    persist: () => app.persist(),
+    onEnd: () => { if (tour === t) tour = null; const r = homeNode && homeNode.querySelector('[data-restore]'); if (r) r.classList.remove('nav-new'); },
+  });
+  tour = t;
+  return t;
+}
+
+/** More › How to play › "How the café works": the tour's first three steps again, then the build sheet. */
+export function replayCafeTour(app) {
+  if (!cafe || !homeNode) return;
+  startTour(app, 'c1', true);
+}
+
+/**
+ * One one-time tip on a calm Home visit (docs/UX_RESTORE_TUTORIAL.md Part 2): 'look' (drag and pinch, once the Terrace
+ * is finished) or 'restyle' (tap a fixed piece, after 3 fixes). Marked seen (and saved) the moment it shows.
+ */
+function showHomeTip(app, key) {
+  if (!key || !cafe) return;
+  markTip(app.save, key);
+  app.persist();
+  if (key === 'look') { cafe.say(tr('cafeTour.tipLook'), 0); return; }
+  // restyle: a dashed ring on the newest thing she fixed in the area on screen
+  const cur = currentArea(app.save);
+  const st = cur ? areaState(app.save, cur.id) : null;
+  const built = st ? st.tasks.filter((x) => x.state === 'done') : [];
+  if (built.length) cafe.pulseProp(built[built.length - 1].prop);
+  cafe.say(tr('cafeTour.tipRestyle'), 0);
 }
 
 /** The live café on Home (tests and main.js use it to replay a pending celebration). */
@@ -371,9 +434,31 @@ export function showMoreSheet(app, newRow = null) {
     settings: () => S.showMore(app),
     postcards: () => showPostcardAlbum(app),
     bakebook: () => showBakeBook(app),
-    howto: () => app.startTutorial && app.startTutorial({ from: 'more' }),
+    howto: () => showHowtoChooser(app),
   };
   for (const b of s.querySelectorAll('[data-go]')) tap(b, () => { s.remove(); go[b.dataset.go](); }, click);
+  tap(s.querySelector('[data-x]'), () => S.closeScreen(s), click);
+  return s;
+}
+
+/**
+ * More › How to play: two short rows, the practice level or how the café works (the tour's replay). The café row
+ * shows only when the café is on Home (it always is once the lesson is behind her).
+ */
+function showHowtoChooser(app) {
+  if (!cafe || !homeNode || !(app.save && app.save.tutorialDone)) { if (app.startTutorial) app.startTutorial({ from: 'more' }); return null; }
+  const s = S.openScreen(el(`<div class="screen modal"><div class="card comfort-card today-card more-home howto-pick">
+    <h2>${esc(tr('more.howto'))}</h2>
+    <div class="more-rows">
+      <button class="c-row today-row" data-pick="practice"><span class="today-icon">${HOWTO_ICON}</span>
+        <div class="c-text"><div class="c-name">${esc(tr('more.howtoPractice'))}</div><div class="c-sub">${esc(tr('comfort.howto.sub'))}</div></div><i class="today-go">›</i></button>
+      <button class="c-row today-row" data-pick="cafe"><span class="today-icon">${CUP_ICON}</span>
+        <div class="c-text"><div class="c-name">${esc(tr('more.howtoCafe'))}</div><div class="c-sub">${esc(tr('more.howtoCafeSub'))}</div></div><i class="today-go">›</i></button>
+    </div>
+    <div class="more-foot"><button class="btn ghost" data-x>${esc(tr('common.close'))}</button></div>
+  </div></div>`));
+  tap(s.querySelector('[data-pick="practice"]'), () => { s.remove(); if (app.startTutorial) app.startTutorial({ from: 'more' }); }, click);
+  tap(s.querySelector('[data-pick="cafe"]'), () => { s.remove(); replayCafeTour(app); }, click);
   tap(s.querySelector('[data-x]'), () => S.closeScreen(s), click);
   return s;
 }

@@ -32,6 +32,7 @@ import { defaultFriends, sanitizeFriends } from './friendChallenge.js';
 import { defaultCafe } from './cafeData.js';
 import { migrateV3 } from './migrateV3.js';
 import { sanitizeCafe } from './cafe.js';
+import { sanitizeCafeTour } from './cafeTour.js';
 import { defaultVisitors, sanitizeVisitors } from './visitors.js';
 import { defaultBooks, sanitizeBooks } from './books.js';
 import { defaultBake, sanitizeBake } from './bakes.js';
@@ -248,7 +249,9 @@ export function normalizeSave(data, now = new Date()) {
   sanitizeTutorial(s); // first-run lesson (docs/UX_FIRST_RUN.md): true only; anyone who has played is marked done
   sanitizeMenuCardDay(s); // one feature card a day: a valid day key or null (older saves: null)
   sanitizeNavSeen(s, data); // Home unlock moments: older saves are seeded with what they already had (no pile of cards)
+  const rawCafe = s.cafe && typeof s.cafe === 'object' && !Array.isArray(s.cafe) ? s.cafe : null;
   sanitizeCafe(s); // v3 café restoration: repair a missing or broken save.cafe (src/meta/cafe.js)
+  sanitizeCafeTour(s, rawCafe); // café tutorial flags tut/met/tips (src/meta/cafeTour.js); older saves mid-café skip the tour
   sanitizeVisitors(s); // café visitors: known ids, whole numbers, postcards only for finished stories
   sanitizeBooks(s); // Puzzle Books: known books, puzzle numbers in range, a bookplate only for a finished book
   sanitizeBake(s); // Tonight's bake: known bake ids, evening-key days, whole counts

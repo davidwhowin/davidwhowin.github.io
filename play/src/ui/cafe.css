@@ -101,7 +101,7 @@
 .cafe-tag-go { background: #fff1d2; border: 1.5px solid #efc77a; }
 .cafe-tag-done { color: var(--c-ink-green); font-size: 15px; }
 .cafe-tag-lock { background: #f3ebe0; color: #75604f; }
-.cafe-tag-lock .cafe-star { color: #c9b28f; text-shadow: none; }
+.cafe-tag-lock .cafe-star { color: #9a7e55; text-shadow: none; } /* 3:1 on #f3ebe0 (fix F6) */
 .cafe-earn { display: flex; align-items: center; gap: 12px; justify-content: space-between; margin-top: 12px; padding: 10px 12px; border-radius: 16px; background: #fbf1e2; font-size: 15px; color: var(--c-muted); }
 .cafe-earn .cafe-btn { flex: none; }
 .cafe-note { font-size: 16px; color: var(--c-muted); text-align: center; margin: 6px 8px 10px; }
@@ -150,10 +150,94 @@ body.calm .cafe-root *, .cafe-root.calm * { transition: none !important; }
 /* the first restore (docs/UX_FIRST_RUN.md T8): a gold ring and a pointing hand on the first task she can afford */
 .cafe-task.cafe-guide { position: relative; border-color: #d99a2b; box-shadow: 0 0 0 3px rgba(242, 184, 75, .9), 0 0 16px rgba(242, 184, 75, .55); }
 .cafe-guide-hand {
-  position: absolute; right: 18px; bottom: -26px; width: 34px; height: 42px; pointer-events: none; z-index: 2;
+  position: absolute; left: 34px; bottom: -26px; width: 34px; height: 42px; pointer-events: none; z-index: 2;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 60'%3E%3Cpath d='M20 4c-2.8 0-5 2.2-5 5v22l-3.2-3.2c-2-2-5.2-2-7 0-1.8 1.8-1.8 4.6 0 6.5l12 13.5C19.6 51.9 23.5 54 28 54h4c7.7 0 14-6.3 14-14V27c0-2.8-2.2-5-5-5-1 0-2 .3-2.8.8C37.5 20.6 35.5 19 33 19c-1.2 0-2.4.4-3.3 1.1C28.9 18.3 27.1 17 25 17V9c0-2.8-2.2-5-5-5z' fill='%23fffaf2' stroke='%232b211c' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain;
   filter: drop-shadow(0 3px 4px rgba(43, 33, 28, .35)); animation: cafe-guide-tap 1.1s ease-in-out infinite;
 }
 @keyframes cafe-guide-tap { 0%, 100% { transform: translateY(6px); } 50% { transform: translateY(0); } }
 body.calm .cafe-guide-hand { animation: none; }
 @media (prefers-reduced-motion: reduce) { .cafe-guide-hand { animation: none; } }
+
+/* ---- text size (docs/UX_RESTORE_TUTORIAL.md fix F2): task names, costs, the area card and the celebration card follow
+   Settings > Text size. Task names and costs use the full scale (16px -> 24px at 1.5); the rest the softened --tsh. */
+.cafe-title-name { font-size: calc(20px * var(--tsh, 1)); }
+.cafe-title-sub { font-size: calc(15px * var(--tsh, 1)); }
+.cafe-h { font-size: calc(22px * var(--tsh, 1)); }
+.cafe-sub { font-size: calc(16px * var(--tsh, 1)); }
+.cafe-count { font-size: calc(16px * var(--tsh, 1)); white-space: normal; }
+.cafe-task { font-size: calc(16px * var(--ts, 1)); }
+.cafe-tag { font-size: calc(17px * var(--ts, 1)); }
+.cafe-tag small, .cafe-tag-done { font-size: calc(15px * var(--ts, 1)); }
+.cafe-earn { font-size: calc(15px * var(--tsh, 1)); }
+.cafe-note { font-size: calc(16px * var(--tsh, 1)); }
+.cafe-btn { font-size: calc(18px * var(--tsh, 1)); }
+.cafe-card-kicker { font-size: calc(15px * var(--tsh, 1)); }
+.cafe-card-title { font-size: calc(30px * var(--tsh, 1)); }
+.cafe-card-line { font-size: calc(16px * var(--tsh, 1)); }
+.cafe-gift { font-size: calc(18px * var(--tsh, 1)); }
+.cafe-gift b { font-size: calc(20px * var(--tsh, 1)); }
+.cafe-card { max-height: calc(100% - 24px); overflow-y: auto; }
+
+/* locked area under the camera (fix F5): "The Pier · opens after the counter" */
+.cafe-title-lock { color: #75604f; }
+/* celebration card: where we go next (fix F8) */
+.cafe-card-next { font-size: calc(16px * var(--tsh, 1)); color: var(--c-text); margin: 0 6px 12px; line-height: 1.4; }
+
+/* a teaching line's Next button inside Pip's bubble */
+.cafe-bubble-next { display: flex; margin: 10px 0 0 auto; min-height: 48px; padding: 0 22px; font-size: calc(17px * var(--tsh, 1)); }
+
+/* Pip's strip inside the build sheet (tour C4/C5) */
+.cafe-sheet-tip {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin: 0 0 10px; padding: 10px 12px; border-radius: 16px;
+  background: #fff4e0; border: 1.5px solid #f0d3a4; font-size: calc(17px * var(--tsh, 1)); line-height: 1.35; color: var(--c-text);
+}
+.cafe-sheet-tip .cafe-bubble-who { margin: 0; }
+.cafe-sheet-tip-text { flex: 1 1 200px; }
+/* "Skip tour" / "Later": a quiet text link with a 44pt target */
+.cafe-skip {
+  min-height: 44px; min-width: 44px; padding: 0 10px; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: calc(16px * var(--tsh, 1)); color: #6b5646; text-decoration: underline; text-underline-offset: 3px;
+}
+
+/* the new area's name plate (A1) */
+.cafe-plate {
+  position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%) scale(.96); opacity: 0; pointer-events: none;
+  padding: 10px 26px; border-radius: 999px; background: rgba(255, 250, 242, .94); border: 1.5px solid var(--c-stroke);
+  box-shadow: 0 10px 30px rgba(60, 40, 30, .22); font-family: var(--c-serif); font-style: italic; font-weight: 700;
+  font-size: calc(28px * var(--tsh, 1)); color: var(--c-text); white-space: nowrap; transition: opacity .5s ease, transform .5s ease;
+}
+.cafe-plate.show { opacity: 1; transform: translate(-50%, -50%); }
+/* the new area's goal card (A2): what it is, what it costs, what it gives, one button */
+.cafe-meet {
+  position: absolute; left: 16px; right: 16px; z-index: 6; max-width: 420px; margin: 0 auto; padding: 18px 18px 12px;
+  background: #fffaf2; border: 1.5px solid var(--c-stroke); border-radius: 24px; text-align: center;
+  box-shadow: 0 14px 40px rgba(60, 40, 30, .28);
+}
+.cafe-meet-name { font-family: var(--c-serif); font-style: italic; font-weight: 700; font-size: calc(26px * var(--tsh, 1)); margin: 0 0 6px; line-height: 1.15; }
+.cafe-meet-line { font-size: calc(17px * var(--tsh, 1)); line-height: 1.4; color: var(--c-text); margin: 2px 0; }
+.cafe-meet-have { color: var(--c-muted); }
+.cafe-meet-row { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 12px; }
+.cafe-meet-row .cafe-btn-main { width: 100%; min-height: 56px; }
+
+/* the café tour over Home (src/ui/cafeTour.js): a dim with a cut-out that never blocks a tap, and Pip's card */
+.ctour { position: absolute; inset: 0; z-index: 40; pointer-events: none; }
+.ctour[hidden] { display: none; }
+.ctour-hole {
+  position: absolute; border-radius: 18px; box-shadow: 0 0 0 9999px rgba(43, 33, 28, .4);
+  transition: left .35s ease, top .35s ease, width .35s ease, height .35s ease;
+}
+.ctour-bubble {
+  position: absolute; pointer-events: auto; box-sizing: border-box; padding: 14px 16px 10px; border-radius: 20px;
+  background: #fffaf2; border: 1.5px solid var(--c-stroke, #e6cfb3); box-shadow: 0 12px 32px rgba(43, 33, 28, .3); color: #3d2c22;
+}
+.ctour-who { display: block; font-family: var(--c-serif, Georgia, serif); font-style: italic; font-weight: 700; font-size: calc(15px * var(--tsh, 1)); color: var(--c-ink-pink, #b0476a); }
+.ctour-text { margin: 2px 0 0; font-size: calc(18px * var(--tsh, 1)); line-height: 1.4; }
+.ctour-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+.ctour-row .ctour-next { margin-left: auto; min-height: 48px; min-width: 120px; }
+.ctour-skip {
+  min-height: 44px; min-width: 44px; padding: 0 6px; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: calc(16px * var(--tsh, 1)); color: #6b5646; text-decoration: underline; text-underline-offset: 3px;
+}
+.ctour-ring { position: relative; z-index: 41; box-shadow: 0 0 0 4px rgba(242, 184, 75, .95), 0 0 18px rgba(242, 184, 75, .6) !important; }
+body.calm .ctour-hole, body.calm .cafe-plate { transition: none; }
+@media (prefers-reduced-motion: reduce) { .ctour-hole, .cafe-plate { transition: none; } }
