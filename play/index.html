@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#f7efe3">
+  <meta name="color-scheme" content="light">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Nova's Café">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="description" content="Nova's Café: a calm drop-and-merge puzzle. Merge little treats, restore a seaside café, and wind down at your own pace.">
+  <title>Nova's Café</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="48x48" href="icons/icon-48.png">
+  <link rel="apple-touch-icon" href="icons/icon-512.png">
+  <!-- Optional web font; the game falls back to system fonts when offline. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="src/ui/cafe.css">
+</head>
+<body>
+  <canvas id="game" aria-label="Nova's Café game board"></canvas>
+
+  <div id="hud" class="hidden" aria-live="polite">
+    <div id="hud-top">
+      <div class="hud-row">
+        <button id="btn-pause" class="icon-btn" aria-label="Pause">
+          <svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>
+        </button>
+        <div class="score-wrap">
+          <div id="hud-title" class="hud-title">SCORE</div>
+          <div id="score">0</div>
+        </div>
+        <div id="keeper-buddy" class="keeper-buddy" aria-hidden="true"><canvas class="keeper-canvas"></canvas></div>
+        <div id="sector-chip" class="chip endless-only">
+          <span id="sector-label">SECTOR 1</span>
+          <div class="mini-bar"><i id="sector-fill"></i></div>
+        </div>
+        <div id="drops-chip" class="chip drops journey-only">
+          <span class="drops-num" id="drops-num">20</span>
+          <span class="drops-label">DROPS</span>
+        </div>
+      </div>
+      <div class="hud-sub">
+        <div id="best-bar" class="best-bar endless-only">
+          <div id="best-fill"></div>
+          <i id="best-ghost" aria-hidden="true" hidden></i>
+          <span id="best-label">BEST 0</span>
+        </div>
+        <div class="journey-row journey-only">
+          <div id="level-chip" class="lvl-chip"><span class="lvl-label">LEVEL</span><b id="level-num">1</b></div>
+          <div id="goals" class="goals"></div>
+        </div>
+        <button id="btn-auto" class="auto-btn" aria-label="Autoplay (test)" aria-pressed="false">AUTO</button>
+      </div>
+      <div id="perk-icons" class="perk-icons endless-only"></div>
+    </div>
+
+    <div id="hud-bottom">
+      <button id="hold-slot" class="slot endless-only" aria-label="Hold slot">
+        <canvas class="orb-canvas"></canvas><span class="slot-label">HOLD</span>
+      </button>
+      <div id="next-slot" class="slot passive">
+        <canvas class="orb-canvas"></canvas><span class="slot-label">NEXT</span>
+      </div>
+      <button id="undo-btn" class="slot undo-slot journey-only" aria-label="Undo last drop" style="display:none">
+        <span class="slot-icon" id="undo-icon"></span><b class="badge" id="undo-count">1</b><span class="slot-label">UNDO</span>
+      </button>
+      <button id="comet-btn" class="slot endless-only" aria-label="Comet">
+        <span class="slot-icon" id="comet-icon"></span><b class="badge" id="comet-count">0</b><span class="slot-label">COMET</span>
+      </button>
+      <div id="boosters" class="boosters journey-only"></div>
+    </div>
+    <div id="hint" class="hint hidden"></div>
+    <div id="keeper-say" class="keeper-say hidden" role="status"></div>
+  </div>
+
+  <div id="screens"></div>
+  <div id="toasts" aria-live="polite"></div>
+  <noscript><p style="color:#fff;padding:24px">Nova's Café needs JavaScript.</p></noscript>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
