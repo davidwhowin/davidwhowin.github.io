@@ -1,4 +1,4 @@
-// Brazilian Portuguese content table. DRAFT: Claude-drafted, not yet reviewed by a native speaker (pt-BR stays ready: false).
+// Brazilian Portuguese content table. DRAFT: Claude-drafted, not yet reviewed by a native speaker (pt-BR is on since 2026-10-29, unreviewed).
 // Glossary and reviewer notes: docs/LOCALISATION.md, Portuguese (BR) section. Same keys and placeholders as content/en.js.
 export default {
   // Chapter names (src/game/chapters.js CHAPTERS, keyed by café area id). C#: Core/Chapters.cs

@@ -95,7 +95,7 @@ const goalText = (g, short) => goalCopy(rawGoalText(g, short), pageLook());
 // Wardrobe: a coat hanger
 export const WARDROBE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.2a2.2 2.2 0 1 1 2.2-2.2c0 1.1-.8 1.6-1.4 2-.5.3-.8.7-.8 1.3v.4"/><path d="M12 8.7 3.4 15.2c-.9.7-.4 2.1.7 2.1h15.8c1.1 0 1.6-1.4.7-2.1L12 8.7z"/></svg>';
 
-export const BUILD = 'v0.6.47';
+export const BUILD = 'v0.6.48';
 
 const root = () => $('#screens');
 const click = () => Svc.sfx('ui');
@@ -2573,7 +2573,7 @@ function soundBackdropRow(s, save) {
 }
 /**
  * Settings > Comfort > Language (docs/LOCALISATION.md). English plus the four launch-wave languages; a language stays
- * greyed out ("coming soon") until its human translation is ready, so nothing machine-translated is ever offered.
+ * greyed out ("coming soon") while its `ready` flag is false (all four Claude drafts are on since 2026-10-29).
  * The choice is kept on this device (src/ui/i18n.js).
  */
 function languageRow() {

@@ -1,4 +1,4 @@
-// French content table. DRAFT: Claude-drafted, not yet reviewed by a native speaker (fr stays ready: false).
+// French content table. DRAFT: Claude-drafted, not yet reviewed by a native speaker (fr is on since 2026-10-29, unreviewed).
 // Glossary and reviewer notes: docs/LOCALISATION.md, French section. Same keys and placeholders as content/en.js.
 export default {
   'chapter.terrace.name': 'La Terrasse',

@@ -1,5 +1,5 @@
-// Brazilian Portuguese UI table. DRAFT: Claude-drafted, not yet reviewed by a native speaker, so LOCALES keeps pt-BR
-// ready: false and players never see it. Natural Brazilian Portuguese, informal "você", warm and calm. Glossary, voice and
+// Brazilian Portuguese UI table. DRAFT: Claude-drafted, not yet reviewed by a native speaker; switched on
+// 2026-10-29 by owner decision (ready: true). Natural Brazilian Portuguese, informal "você", warm and calm. Glossary, voice and
 // reviewer notes: docs/LOCALISATION.md, Portuguese (BR) section. Same keys and placeholders as src/i18n/en.js
 // (tests/i18nPtBr.test.mjs); `node tools/i18n-extract.mjs` lists gaps. pt's plural 'one' also covers 0, so every .one keeps {n}.
 export default {

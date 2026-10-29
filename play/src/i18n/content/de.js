@@ -1,4 +1,4 @@
-// German content table. DRAFT: Claude-drafted, not yet reviewed by a native speaker (de stays ready: false).
+// German content table. DRAFT: Claude-drafted, not yet reviewed by a native speaker (de is on since 2026-10-29, unreviewed).
 // Glossary and reviewer notes: docs/LOCALISATION.md, German section. Same keys and placeholders as content/en.js.
 export default {
   'chapter.terrace.name': 'Terrasse',

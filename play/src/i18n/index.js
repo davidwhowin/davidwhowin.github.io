@@ -1,7 +1,8 @@
 // Tiny i18n: t(key, params) with {name} interpolation, English as the source table, per-key fallback to English.
-// Locale: the saved choice (this device, localStorage) if that language is ready, else the device language
-// (navigator.languages) if ready, else English. A language becomes selectable in Settings > Comfort > Language only
-// once its `ready` flag is true (no machine translations ship). Numbers stay fmt() / toLocaleString('en-US') for now
+// Locale: the saved choice (this device, localStorage) if that language is ready, else English. The player picks it by
+// hand in Settings > Comfort > Language (owner decision 2026-10-29: no device-language auto-detection, English stays
+// the default). A language is selectable only while its `ready` flag is true. de / fr / es / pt-BR are Claude-drafted
+// and switched on 2026-10-29 without native review (docs/LOCALISATION.md). Numbers stay fmt() / toLocaleString('en-US') for now
 // (docs/LOCALISATION.md, phase 2). Long-form content text (chapter names, Pip's lines, bakes...) lives in separate
 // content tables read by ct() / ctp() / ctList() and withText() (phase 3). No DOM and no UI imports, so src/game and
 // src/meta can use it and it runs under node tests. src/ui/i18n.js re-exports this module.
@@ -20,10 +21,10 @@ import { PSEUDO_ID, pseudoTable } from './pseudo.js';
 /** Every target language, in menu order. `name` is the endonym (never translated). */
 export const LOCALES = [
   { id: 'en', name: 'English', ready: true },
-  { id: 'de', name: 'Deutsch', ready: false },
-  { id: 'fr', name: 'Français', ready: false },
-  { id: 'es', name: 'Español', ready: false },
-  { id: 'pt-BR', name: 'Português (Brasil)', ready: false },
+  { id: 'de', name: 'Deutsch', ready: true },
+  { id: 'fr', name: 'Français', ready: true },
+  { id: 'es', name: 'Español', ready: true },
+  { id: 'pt-BR', name: 'Português (Brasil)', ready: true },
 ];
 export const TABLES = { en, de, fr, es, 'pt-BR': ptBR };
 /** Long-form content tables (phase 3): chapter, level tip, lesson, keeper, story, bake, book, keepsake and reflection text. */
@@ -57,14 +58,9 @@ export function resolveLocale(saved, deviceLangs = []) {
 function readSaved() {
   try { return typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem(LOCALE_KEY) : null; } catch (_) { return null; }
 }
-function deviceLangs() {
-  try {
-    if (typeof navigator === 'undefined') return [];
-    return navigator.languages && navigator.languages.length ? [...navigator.languages] : [navigator.language];
-  } catch (_) { return []; }
-}
-
-let current = resolveLocale(readSaved(), deviceLangs());
+// No device languages: the owner wants a manual choice, so a fresh install starts in English (resolveLocale still takes
+// a device list for tests and a possible later opt-in).
+let current = resolveLocale(readSaved(), []);
 
 /**
  * Dev only: the 'qps' pseudo-locale (src/i18n/pseudo.js) generated from English, UI and content tables alike. Never

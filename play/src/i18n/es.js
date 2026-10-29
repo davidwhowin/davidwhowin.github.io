@@ -1,5 +1,5 @@
-// Spanish UI table. DRAFT: Claude-drafted, not yet reviewed by a native speaker, so LOCALES keeps es ready: false and
-// players never see it. Neutral international Spanish (Latin-America-friendly, natural in Spain, no vosotros), informal
+// Spanish UI table. DRAFT: Claude-drafted, not yet reviewed by a native speaker; switched on
+// 2026-10-29 by owner decision (ready: true). Neutral international Spanish (Latin-America-friendly, natural in Spain, no vosotros), informal
 // "tú", opening ¿ ¡ marks. Glossary, voice and reviewer notes: docs/LOCALISATION.md, Spanish section. Same keys and
 // placeholders as src/i18n/en.js (tests/i18nEs.test.mjs); `node tools/i18n-extract.mjs` lists gaps.
 export default {

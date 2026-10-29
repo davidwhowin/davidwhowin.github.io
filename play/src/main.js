@@ -40,6 +40,7 @@ import { weekDrop, weekTier, weekLevel, weekEndless, weekNebula, weeklyCardDue, 
 import { showWeeklyCard } from './ui/weeklyView.js';
 import { AD_RULES } from './ads/adRules.js';
 import { t } from './i18n/index.js';
+import { watchTextFit } from './ui/textFit.js';
 import { testerFromUrl, clearTester, canSkipRun, skipLevel } from './meta/tester.js'; // tester-only Skip level
 import { Renderer } from './game/renderer.js';
 import { Effects } from './game/effects.js';
@@ -190,6 +191,8 @@ applyEvening();
 // v3 words (src/ui/copy.js): every screen, card, toast and HUD label shows the cozy seaside words, unless the Cosmic
 // look is on. Display only: the rule modules, saves and fixtures keep their original words.
 watchCozyWords(document.body, () => uiLook(save));
+// Translations: the long-text safety net (src/ui/textFit.js; off in English). hud.js sets <html lang>.
+watchTextFit(document.body);
 // re-check each minute so the look turns itself off at 06:00 (and on at 21:00) without a restart
 setInterval(() => { if (calmActive(save) !== calmWas || (eveningActive(save) || calmActive(save)) !== eveningWas) applyEvening(); }, 60000);
 /** A no-ad moment offer (evening, Steady Start) is on screen: the menu banner must stay hidden. */

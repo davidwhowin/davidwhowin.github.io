@@ -1,5 +1,5 @@
-// French UI table. DRAFT: Claude-drafted, not yet reviewed by a native speaker, so LOCALES keeps fr ready: false and
-// players never see it. Glossary, voice (informal "tu"), typography (no-break space U+00A0 before ! ? : ; and inside
+// French UI table. DRAFT: Claude-drafted, not yet reviewed by a native speaker; switched on
+// 2026-10-29 by owner decision (ready: true). Glossary, voice (informal "tu"), typography (no-break space U+00A0 before ! ? : ; and inside
 // « ») and reviewer notes: docs/LOCALISATION.md, French section. Same keys and placeholders as src/i18n/en.js
 // (tests/i18nFr.test.mjs); `node tools/i18n-extract.mjs` lists gaps.
 export default {
