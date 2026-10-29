@@ -429,7 +429,7 @@ export default {
   'booster.free': 'Here\'s one free to try — tap it at the bottom of the screen.',
   'booster.buy1': 'Buy 1 ·',
   'booster.youHave': 'You have {n} coins.',
-  'booster.getCoins': 'Get coins',
+  'booster.earnMore': 'Earn more by playing.',
 
   // First-time moments (screens.js showMechanicCard, showDiscovery)
   'mech.kicker': 'NEW IN THE CAFÉ',
@@ -721,7 +721,6 @@ export default {
   'wardrobe.yourLook': 'Your look',
   'wardrobe.lookLine': '{skin} · {bg} · {keeper}',
   'wardrobe.lookLineOutfit': '{skin} · {bg} · {keeper} in {outfit}',
-  'wardrobe.buysNone': 'Most looks are earned by playing. Any premium pack you buy shows up here.',
   'wardrobe.packChip': '{name} pack',
   'wardrobe.somePieces': '{owned} of {total} pieces',
   'wardrobe.packsRow': 'Your packs · {n}',
@@ -1232,8 +1231,6 @@ export default {
   'banner.level': 'LEVEL {n}',
   'banner.drops.other': '{n} drops',
   'banner.steady': 'Steady Start',
-  'banner.streak.one': 'Nova Streak +{n} Wild Orb',
-  'banner.streak.other': 'Nova Streak +{n} Wild Orbs',
   'banner.puzzle': 'PUZZLE {n}',
   'banner.puzzleSub': 'The pieces always come in this order',
   'banner.solved': 'SOLVED',
@@ -1554,12 +1551,7 @@ export default {
   // New background toast (src/main.js)
   'toast.newNebula': 'New nebula: {name}',
   'toast.newView': 'A new view: {name}',
-  // Win card: Closing time and the next café fix (src/ui/screens.js closingLineHtml, cafe-next)
-  'result.closing.label': 'Closing time:',
-  'result.closing.points': '+{n} points',
-  'closing.subFirst': 'Each spare drop becomes {n} points',
-  'result.closing.drops.one': '{n} spare drop',
-  'result.closing.drops.other': '{n} spare drops',
+  // Win card: the gift skin name
   'result.skinName': '{name} skin',
   // Goal line with "or bigger" as one sentence (src/ui/copy.js tierGoalText). C#: Copy.TierGoalText
   'goal.tierOrBigger': 'Make {n} {name} or bigger',

@@ -95,7 +95,7 @@ const goalText = (g, short) => goalCopy(rawGoalText(g, short), pageLook());
 // Wardrobe: a coat hanger
 export const WARDROBE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.2a2.2 2.2 0 1 1 2.2-2.2c0 1.1-.8 1.6-1.4 2-.5.3-.8.7-.8 1.3v.4"/><path d="M12 8.7 3.4 15.2c-.9.7-.4 2.1.7 2.1h15.8c1.1 0 1.6-1.4.7-2.1L12 8.7z"/></svg>';
 
-export const BUILD = 'v0.6.46';
+export const BUILD = 'v0.6.47';
 
 const root = () => $('#screens');
 const click = () => Svc.sfx('ui');
@@ -2982,19 +2982,21 @@ export function offerBoosterPurchase(app, id) {
   return new Promise((resolve) => {
     const save = app.save;
     const b = BOOSTERS[id];
+    // Short on coins: say so kindly and offer Close only. Never a link to Buy coins or any real-money page from
+    // inside a level (docs/UX_PURCHASES_TAB.md, Shop follow-up 1; guarded in tests/shopmenu.test.mjs).
+    const short = save.coins < b.price;
     const node = open(el(`<div class="screen modal"><div class="card">
       <div style="color:var(--ink-orange, #ff8a5c);width:64px;height:64px;margin:0 auto">${ICONS[id].replaceAll('<svg', '<svg width="64" height="64"')}</div>
       <h2>${b.name}</h2><p>${esc(b.desc)}</p>
-      <button class="btn gold" data-buy ${save.coins >= b.price ? '' : 'disabled'}>${esc(tr('booster.buy1'))} <span class="coin"></span>${fmt(b.price)}</button>
-      ${save.coins >= b.price ? '' : `<p style="font-size:calc(15px * var(--ts))">${esc(tr('booster.youHave', { n: fmt(save.coins) }))}</p><button class="btn" data-shop>${esc(tr('booster.getCoins'))}</button>`}
-      <button class="btn ghost" data-x>${esc(tr('common.cancel'))}</button>
+      <button class="btn gold" data-buy ${short ? 'disabled' : ''}>${esc(tr('booster.buy1'))} <span class="coin"></span>${fmt(b.price)}</button>
+      ${short ? `<p style="font-size:calc(15px * var(--ts))">${esc(tr('booster.youHave', { n: fmt(save.coins) }))} ${esc(tr('booster.earnMore'))}</p>` : ''}
+      <button class="btn ghost" data-x>${esc(tr(short ? 'common.close' : 'common.cancel'))}</button>
     </div></div>`));
     let done = false;
     const finish = (v) => { if (done) return; done = true; close(node); resolve(v); };
     tap(node.querySelector('[data-buy]'), () => {
       if (buyBooster(save, id)) { Svc.sfx('coin'); app.persist(); finish(true); }
     }, click);
-    tap(node.querySelector('[data-shop]'), () => { finish(false); showShop(app, 'coins'); }, click);
     tap(node.querySelector('[data-x]'), () => finish(false), click);
   });
 }

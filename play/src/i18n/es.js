@@ -429,7 +429,7 @@ export default {
   'booster.free': 'Aquí tienes una gratis para probar: tócala abajo en la pantalla.',
   'booster.buy1': 'Comprar 1 ·',
   'booster.youHave': 'Tienes {n} monedas.',
-  'booster.getCoins': 'Conseguir monedas',
+  'booster.earnMore': 'Gana más jugando.',
 
   // First-time moments (screens.js showMechanicCard, showDiscovery)
   'mech.kicker': 'NOVEDAD EN EL CAFÉ',
@@ -689,7 +689,6 @@ export default {
   'wardrobe.yourLook': 'Tu estilo',
   'wardrobe.lookLine': '{skin} · {bg} · {keeper}',
   'wardrobe.lookLineOutfit': '{skin} · {bg} · {keeper} con {outfit}',
-  'wardrobe.buysNone': 'Casi todos los estilos se ganan jugando. Los paquetes premium que compres aparecen aquí.',
   'wardrobe.packChip': 'Paquete {name}',
   'wardrobe.somePieces': '{owned} de {total} piezas',
   'wardrobe.packsRow': 'Tus paquetes · {n}',
@@ -1438,12 +1437,7 @@ export default {
   // New background toast (src/main.js)
   'toast.newNebula': 'Nebulosa nueva: {name}',
   'toast.newView': 'Una vista nueva: {name}',
-  // Win card: Closing time and the next café fix (src/ui/screens.js closingLineHtml, cafe-next)
-  'result.closing.label': 'Hora de cerrar:',
-  'result.closing.points': '+{n} puntos',
-  'closing.subFirst': 'Cada jugada sobrante vale {n} puntos',
-  'result.closing.drops.one': '{n} jugada sobrante',
-  'result.closing.drops.other': '{n} jugadas sobrantes',
+  // Win card: the gift skin name
   'result.skinName': 'Estilo {name}',
   // Goal line with "or bigger" as one sentence (src/ui/copy.js tierGoalText). C#: Copy.TierGoalText
   'goal.tierOrBigger': 'Haz {n} {name} o más grande',
@@ -1561,8 +1555,6 @@ export default {
   'banner.drops.one': '{n} jugada',
   'banner.drops.other': '{n} jugadas',
   'banner.steady': 'Inicio tranquilo',
-  'banner.streak.one': 'Racha cálida +{n} Azúcar mágico',
-  'banner.streak.other': 'Racha cálida +{n} Azúcares mágicos',
   'banner.puzzle': 'ACERTIJO {n}',
   'banner.puzzleSub': 'Las piezas siempre llegan en este orden',
   'banner.solved': 'RESUELTO',

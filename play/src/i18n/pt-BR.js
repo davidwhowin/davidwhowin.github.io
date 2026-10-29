@@ -428,7 +428,7 @@ export default {
   'booster.free': 'Aqui vai uma grátis para experimentar — toque nela na parte de baixo da tela.',
   'booster.buy1': 'Comprar 1 ·',
   'booster.youHave': 'Você tem {n} moedas.',
-  'booster.getCoins': 'Pegar moedas',
+  'booster.earnMore': 'Ganhe mais jogando.',
 
   // First-time moments (screens.js showMechanicCard, showDiscovery)
   'mech.kicker': 'NOVIDADE NO CAFÉ',
@@ -687,7 +687,6 @@ export default {
   'wardrobe.yourLook': 'Seu visual',
   'wardrobe.lookLine': '{skin} · {bg} · {keeper}',
   'wardrobe.lookLineOutfit': '{skin} · {bg} · {keeper} com {outfit}',
-  'wardrobe.buysNone': 'A maioria dos visuais se ganha jogando. Os pacotes premium que você comprar aparecem aqui.',
   'wardrobe.packChip': 'Pacote {name}',
   'wardrobe.somePieces': '{owned} de {total} peças',
   'wardrobe.packsRow': 'Seus pacotes · {n}',
@@ -1437,12 +1436,7 @@ export default {
   // New background toast (src/main.js)
   'toast.newNebula': 'Nova nebulosa: {name}',
   'toast.newView': 'Uma nova vista: {name}',
-  // Win card: Closing time and the next café fix (src/ui/screens.js closingLineHtml, cafe-next)
-  'result.closing.label': 'Hora de fechar:',
-  'result.closing.points': '+{n} pontos',
-  'closing.subFirst': 'Cada jogada que sobra vira {n} pontos',
-  'result.closing.drops.one': '{n} jogada sobrando',
-  'result.closing.drops.other': '{n} jogadas sobrando',
+  // Win card: the gift skin name
   'result.skinName': 'Visual {name}',
   // Goal line with "or bigger" as one sentence (src/ui/copy.js tierGoalText). C#: Copy.TierGoalText
   'goal.tierOrBigger': 'Faça {n} {name} ou maior',
@@ -1560,8 +1554,6 @@ export default {
   'banner.drops.one': '{n} jogada',
   'banner.drops.other': '{n} jogadas',
   'banner.steady': 'Começo tranquilo',
-  'banner.streak.one': 'Sequência quentinha +{n} Açúcar mágico',
-  'banner.streak.other': 'Sequência quentinha +{n} Açúcares mágicos',
   'banner.puzzle': 'DESAFIO {n}',
   'banner.puzzleSub': 'As peças vêm sempre nesta ordem',
   'banner.solved': 'RESOLVIDO',
