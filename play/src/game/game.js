@@ -24,16 +24,14 @@ import { trackOrbit } from '../meta/orbits.js';
 import { validRunSnap, SNAP_VERSION } from '../meta/runSnap.js';
 import { challengeBest, normChallenge } from '../meta/challenge.js';
 import { zenBest } from '../meta/zen.js';
-import { streakTag } from '../meta/winStreak.js';
 import { newCurve, curveTick, ghostAt, raceFor } from '../meta/raceBest.js';
 import { AD_REWARDS } from '../ads/adRules.js';
 import { bountyFor, trackBounty, openSectorBounty, sanitizeRunBounty, bountyText, BOUNTY_COINS } from './bounties.js';
 import { tierName } from './tierNames.js';
 import { newMoments, momentOpts, serveMoment, tickMoment, sanitizeRunMoments, momentResult, momentDropsLeft, momentWindow, MOMENT_COINS } from './moments.js';
 import { closingBonus, closingPace, CLOSING_POINTS } from './closing.js';
-import { teapotRefusal, CLOSING_SUB, tinTreatText } from '../meta/mechanicIntro.js';
-import { t as tr, tp as trp } from '../i18n/index.js'; // board text keys (closing.subFirst) and the banners (banner.*); toasts stay English
-import { hudTextFactor } from './effects.js';
+import { teapotRefusal, tinTreatText } from '../meta/mechanicIntro.js';
+import { t as tr, tp as trp } from '../i18n/index.js'; // the banners (banner.*); toasts stay English
 import { pageLook, finishWord } from '../ui/copy.js';
 import { normKit, normFriend, whose, whoName, whoGender } from '../meta/friendChallenge.js';
 import { puzzleReplay } from './puzzles.js';
@@ -237,7 +235,7 @@ export class Game {
       const label = run.friend ? tr('banner.challenge') : run.nebula ? tr('banner.dailyNebula') : level.kind === 'superhard' ? tr('banner.superHard') : level.kind === 'hard' ? tr('banner.hard') : tr('banner.level', { n: level.n });
       const color = run.nebula ? '#ff8ae0' : level.kind === 'superhard' ? '#ff4fd8' : level.kind === 'hard' ? '#ff8a5c' : '#9fd8ff';
       // a level that introduces a new rule starts quietly: the rule box is the one message (docs/UX_MECHANICS.md P1)
-      if (!opts.quietStart) this.fx.banner(label, color, [trp('banner.drops', level.drops), steady ? tr('banner.steady') : '', streakTag(streak)].filter(Boolean).join(' · '), { dur: 1.3, size: 0.85 });
+      if (!opts.quietStart) this.fx.banner(label, color, [trp('banner.drops', level.drops), steady ? tr('banner.steady') : ''] /* Warm Streak is silent: its Wild Sugar is simply on the board */.filter(Boolean).join(' · '), { dur: 1.3, size: 0.85 });
       await this.tw.wait(0.5);
       if (tok !== this.token) return;
       await this.boosterUnlockIntro();
@@ -1939,7 +1937,7 @@ export class Game {
       const base = r.score;
       await this.playClosing(closing, tok, pre);
       if (tok !== this.token) return;
-      r.score = base + closing.score; // exactly the announced bonus, whether the show played, was skipped or was instant
+      r.score = base + closing.score; // exactly the bonus, whether the show played, was skipped or was instant
     }
     const save = this.save;
     save.journey = save.journey || { level: 1, stars: {} };
@@ -1987,16 +1985,13 @@ export class Game {
     const total = r.dropsLeft;
     this.aim.visible = false;
     r.closingShow = true; // hides the waiting piece on the aim line (presentation only)
-    // the first Closing time ever teaches the rule here, where it happens (docs/UX_RESULT_CARDS.md §1, rule 6), not on
-    // the win card: "Each spare drop becomes 250 points", shown 1.2 s longer. journeyWin sets mechSeen.closing after this.
-    const first = !(this.save && this.save.mechSeen && this.save.mechSeen.closing) && !r.autoplay && !r.nebula && !r.tutorial;
-    const sub = first ? tr('closing.subFirst', { n: CLOSING_POINTS.toLocaleString('en-US') }) : CLOSING_SUB;
+    // Closing time is a silent effect (owner's call, docs/UX_RESULT_CARDS.md "Silent effects"): no "Closing time!"
+    // title or explainer, only the spare drops popping into points.
     if (this.fx.reduced || !R.L) {
       if (pre && this.closing === pre) this.closing = null;
       r.score += closing.score;
       this.hud.setDrops(0, r.level.drops, true);
-      if (R.L) this.fx.text(R.w / 2, R.L.aimY, `Closing time +${closing.score.toLocaleString('en-US')}`, '#ffe08a', 20, { dur: 1.4, vy: -16 });
-      if (R.L && first) this.fx.text(R.w / 2, R.L.aimY + 28 * hudTextFactor(), sub, '#fff4dc', 16, { dur: 2.6, vy: -16 });
+      if (R.L) this.fx.text(R.w / 2, R.L.aimY, `+${closing.score.toLocaleString('en-US')}`, '#ffe08a', 20, { dur: 1.4, vy: -16 });
       Svc.haptic('light');
       return;
     }
@@ -2006,11 +2001,6 @@ export class Game {
     const chimeEvery = Math.max(1, Math.ceil(0.09 / pace)); // never more than ~11 chimes a second
     const row = R.aimRow();
     const made = [];
-    if (!st.skip) {
-      const ty = R.L.by + R.L.cell * 0.9;
-      this.fx.text(R.w / 2, ty, 'Closing time!', '#ffe08a', 24, { dur: 2.6, vy: -6 });
-      this.fx.text(R.w / 2, ty + 30 * hudTextFactor(), sub, '#fff4dc', 16, { dur: first ? 3.8 : 2.6, vy: -6 });
-    }
     try {
       for (let i = 0; i < n && !st.skip; i++) {
         const col = i % 5;

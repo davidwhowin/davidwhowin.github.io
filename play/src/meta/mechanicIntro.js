@@ -19,8 +19,6 @@ export const MECHANIC_TEXT = Object.freeze({ orders: ORDERS_INTRO, glaze: GLAZE_
 /** Second cup note (docs/UX_MECHANICS.md P4); the extra line shows only the first time ever. */
 export const SECOND_CUP_NOTE = 'Lovely chain! Second cup: +1 drop';
 export const SECOND_CUP_FIRST = 'Chains of 4 or more give you a free drop.';
-/** Closing time show subtitle (P5). The first-ever show says the points instead: i18n key closing.subFirst. */
-export const CLOSING_SUB = 'Spare drops become points';
 
 /** The Seagull (Comet under the Cosmic look) can't take a teapot: a reassuring toast, nothing is spent (P3). */
 export function teapotRefusal(look) {

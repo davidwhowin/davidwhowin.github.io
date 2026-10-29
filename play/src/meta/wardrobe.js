@@ -4,6 +4,7 @@
 // Cosmetic only. No timers, no "limited" copy, nothing tied to adverts.
 import { SKINS, equipSkin, IAP } from './economy.js';
 import { PACKS, PACK_BY_ID, packPieces, ownsPiece, ownsPack } from './packs.js';
+import { equipLook, ownsLook } from './looks.js';
 import { KEEPERS, ownsKeeper, equipKeeper, equippedKeeper } from './keepers.js';
 import { OUTFITS, equipOutfit, equippedOutfit } from './outfits.js';
 import { SCENE_PRICE, COSMIC_NEBULAS, COSMIC_NEBULA_PRICE } from './scenes.js';
@@ -218,8 +219,43 @@ export function ownedPacks(save) {
   return PACKS.map((p) => {
     const pieces = packPieces(p);
     const owned = pieces.filter((x) => ownsPiece(save, x)).length;
-    return { id: p.id, name: p.name, owned, total: pieces.length, complete: ownsPack(save, p) };
+    return { id: p.id, name: p.name, owned, total: pieces.length, complete: ownsPack(save, p), skin: p.skin.id, wearing: wearingPack(save, p.id) };
   }).filter((p) => p.owned > 0);
+}
+
+/** True when this pack's look is on: its piece style is in use, or (a pack owned without its piece style) one of its
+ *  backgrounds is the chosen background. */
+export function wearingPack(save, packId) {
+  const pack = PACK_BY_ID[packId];
+  if (!pack || !save) return false;
+  const skinOwned = ownsPiece(save, packPieces(pack)[0]);
+  if (skinOwned) return !!(save.skins && save.skins.equipped === pack.skin.id);
+  const bd = save.settings && save.settings.backdrop;
+  return pack.scenes.some((sc) => sc.id === bd && ownsPiece(save, { kind: 'scene', id: sc.id }));
+}
+
+/**
+ * "Wear it" in the Your packs sheet (docs/UX_PURCHASES_TAB.md 3c): puts on what is owned of one pack through the
+ * existing equip functions: its piece style, the board and merge looks that come with it, and its first owned
+ * background. Owns nothing new, changes nothing else. ctx.setSetting is the app setter (applies the background).
+ * Returns true when the pack's look is on afterwards.
+ */
+export function wearPack(save, packId, ctx = {}) {
+  const pack = PACK_BY_ID[packId];
+  if (!pack || !save) return false;
+  const pieces = packPieces(pack);
+  if (!pieces.some((p) => ownsPiece(save, p))) return false;
+  if (ownsPiece(save, pieces[0])) {
+    equipSkin(save, pack.skin.id);
+    if (pack.board && ownsLook(save, 'board', pack.board)) equipLook(save, 'board', pack.board);
+    if (pack.combo && ownsLook(save, 'combo', pack.combo)) equipLook(save, 'combo', pack.combo);
+  }
+  const bg = pieces.find((p) => p.kind === 'scene' && ownsPiece(save, p) && unlockedBackdrops(save).includes(p.id));
+  if (bg) {
+    if (typeof ctx.setSetting === 'function') ctx.setSetting('backdrop', bg.id);
+    else { save.settings = save.settings || {}; save.settings.backdrop = bg.id; }
+  }
+  return true;
 }
 
 /** What the player is wearing now: { skin, backdrop ('auto' or id), keeper, outfit }. */

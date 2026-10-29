@@ -763,7 +763,6 @@ body.has-banner .screen { padding-bottom: calc(var(--sab) + 76px); }
 .next-goal { display: flex; align-items: center; gap: 10px; background: var(--well, rgba(0,0,0,.22)); border-radius: 14px; padding: 10px 12px; margin: 6px 0 2px; text-align: left; }
 .next-goal b { display: block; font-size: calc(18px * var(--ts)); color: var(--ink-strong, #fff); line-height: 1.25; }
 .next-goal .ng-orb { width: 38px; height: 38px; flex: 0 0 38px; }
-.card p.streak-note { color: var(--ink-strong, #fff); font-weight: 700; text-wrap: balance; }
 
 /* autoplay test options (pause screen, only while Autoplay is ON) */
 .test-opts { margin-top: 12px; padding: 10px 12px; border-radius: 16px; border: 1px dashed var(--stroke); background: var(--well, rgba(0,0,0,.18)); text-align: left; }
@@ -966,10 +965,6 @@ body.calm .sw-track, body.calm .sw-track i { transition: none; }
 .dust-earn { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0; font-weight: 700; font-size: calc(18px * var(--ts)); color: var(--ink-soft, #e3d4ff); }
 .dust-earn small { color: var(--muted); font-weight: 600; font-size: 80%; }
 /* Nova Streak note (v0.5.6): calm info line, no button */
-.streak-note { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0; color: var(--ink-blue, #cfe6ff); font-size: calc(15px * var(--ts)); line-height: 1.3; text-align: left; }
-.streak-pips { display: inline-flex; gap: 3px; flex: none; }
-.streak-pips i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid #9fd8ff; opacity: .55; }
-.streak-pips i.on { background: #9fd8ff; opacity: 1; box-shadow: 0 0 6px #9fd8ff; }
 
 /* Keeper portraits: a gentle bob (off with Calm / reduce motion) */
 .keeper-canvas { display: block; width: 56px; height: 56px; animation: keeperbob 3.2s ease-in-out infinite; }
@@ -1403,9 +1398,6 @@ body.has-banner .screen.more-screen { padding-bottom: calc(var(--sab) + 72px); }
 .earn-row .earn { margin: 0; }
 .earn-row .season-earn { margin: 0; }
 /* Closing time bonus line on a Journey win card (src/game/closing.js) */
-.result-card .closing-line { line-height: 1.3; text-wrap: balance; }
-.result-card .closing-line b { font-weight: 800; }
-.result-card .closing-coins { white-space: nowrap; } /* keeps "8 spare drops", "→ +2,000" and "· +5 coins" whole */
 /* "Next: Level N" teaser on its own: a plain line, not a boxed card */
 .stop-card.teaser-only { margin: 8px 0 2px; padding: 0 4px; border: 0; background: none; text-align: center; }
 .stop-card.teaser-only span { line-height: 1.25; text-wrap: balance; }
@@ -1416,7 +1408,6 @@ body.has-banner .screen.more-screen { padding-bottom: calc(var(--sab) + 72px); }
   .result-card h2 { margin-bottom: 2px; }
   .result-card .stars { margin: 6px 0 2px; }
   .result-card > p { margin: 4px 0; }
-  .result-card .streak-note { margin: 2px 0; }
   .result-card .keeper-line { margin-top: 6px; padding-top: 4px; padding-bottom: 4px; }
   .result-card .btn { margin-top: 10px; }
   .result-card .stop-row .btn { line-height: 1.15; }
@@ -1664,13 +1655,6 @@ button.result-note.ad-note {
   padding: 6px 10px; border-radius: 12px; background: var(--panel-soft, rgba(14,9,40,.72)); }
 .wd-hero-cap b { font-size: calc(13px * var(--ts)); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-gold, var(--gold)); }
 .wd-hero-cap span { font-size: calc(15px * var(--ts)); color: var(--text); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-.wd-buys { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; }
-.wd-buys > b { width: 100%; font-size: calc(13px * var(--ts)); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.wd-buys.none { color: var(--muted); font-size: calc(15px * var(--ts)); line-height: 1.35; text-align: center; padding: 0 6px; }
-.wd-pack-chip { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--stroke); font-weight: 700; font-size: calc(14px * var(--ts)); }
-.wd-pack-chip.full { border-color: rgba(255,213,74,.55); background: linear-gradient(120deg, rgba(255,213,74,.18), rgba(255,95,210,.10)); }
-.wd-pack-chip small { color: var(--muted); font-weight: 600; font-size: calc(13px * var(--ts)); }
 
 .wd-tabs { position: sticky; top: calc(50px + var(--sat)); z-index: 2; display: flex; gap: 6px; padding: 4px; overflow-x: auto; scrollbar-width: none; border-radius: 18px; background: var(--deep, rgb(16, 10, 44)); box-shadow: 0 0 0 10px var(--shade, rgb(14, 8, 44)), 0 14px 18px var(--shade, rgba(0,0,0,.45)); }
 .wd-tabs::-webkit-scrollbar { display: none; }
@@ -2117,9 +2101,9 @@ body.evening-calm::after { background: rgba(70, 30, 0, .16); }
 
 /* ---- Shop for evening players (UX audit 2026-10): one currency per tab, stacked cards, nothing smaller than 15px,
    every button at least 44px tall, tab strips that wrap instead of running off the screen. ---- */
-.lvl-tag, .usd, .coin-tier small, .scene-price, .pack-piece small, .pack-tier small, .wd-pack-chip small { font-size: calc(15px * var(--ts)); }
+.lvl-tag, .usd, .coin-tier small, .scene-price, .pack-piece small, .pack-tier small { font-size: calc(15px * var(--ts)); }
 .lvl-tag { letter-spacing: .02em; }
-.pack-piece b, .wd-pack-chip { font-size: calc(16px * var(--ts)); }
+.pack-piece b { font-size: calc(16px * var(--ts)); }
 .pack-piece .btn.small { min-height: 48px; font-size: calc(16px * var(--ts)); }
 /* 4 across at text size 1, 2 x 2 from 1.25 up */
 .shop-tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(70px + (var(--ts) - 1) * 180px), 1fr)); overflow: visible; }
@@ -2162,7 +2146,7 @@ body.evening-calm::after { background: rgba(70, 30, 0, .16); }
 .pack-hero { height: 150px; }
 .pack-acts .btn.small { min-height: 48px; }
 /* Wardrobe small print: never under 15px (evening players, weaker near vision) */
-.wd-state, .wd-go, .wd-sub, .wd-auto, .wd-hero-cap b, .wd-buys > b, .wd-h, .wd-grid.tall .wd-state, .wd-grid.tall .wd-go, .wday .wd-name { font-size: calc(15px * var(--ts)); }
+.wd-state, .wd-go, .wd-sub, .wd-auto, .wd-hero-cap b, .wd-h, .wd-grid.tall .wd-state, .wd-grid.tall .wd-go, .wday .wd-name { font-size: calc(15px * var(--ts)); }
 
 /* ---- First-run lesson coach (src/ui/coach.js, docs/UX_FIRST_RUN.md): warm veil, cream rings, pointing hand, caption */
 .coach { position: fixed; inset: 0; z-index: 7; pointer-events: none; }
@@ -2260,13 +2244,35 @@ body.calm .finish-marks .bl svg, body.calm .cafe-star-pop .star { transition: no
 /* ---- Text size 1.5 fit sweep (docs/UX_OPPORTUNITIES.md #9), checked at 360x780 and 390x844.
    Words wrap only between words (no hyphens, a mid-word break only if one word is wider than its box),
    no text under 15px, no tap under 48px. ---- */
-/* Wardrobe: one compact tab row that scrolls sideways. The tab font is fixed (15-17px) so the strip stays one
-   row at every text size instead of a 3-row, 270px block; the picked tab scrolls into view (wardrobe.js). */
-.wd-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-padding: 0 24px; }
-.wd-tab { flex: 0 0 auto; min-width: 0; min-height: 52px; flex-direction: row; gap: 6px; padding: 4px 12px; }
+/* Wardrobe tabs (docs/UX_PURCHASES_TAB.md 3b; DESIGN.md "tab strips wrap"): a grid, every tab visible, no sideways
+   scroll. 3 across below text size 1.3, 2 across from 1.3 (.big, set in wardrobe.js), where the grid also stops being
+   sticky so it never covers a third of the screen. Icon above the label; the owned count is in the section heading. */
+.wd-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; overflow: visible; }
+.wd-tabs.big { grid-template-columns: repeat(2, minmax(0, 1fr)); position: static; }
+.wd-tab { min-width: 0; min-height: 52px; flex-direction: column; justify-content: center; gap: 2px; padding: 6px 4px; }
 .wd-tab-icon svg { width: 20px; height: 20px; }
-.wd-tab-label { font-size: clamp(15px, calc(15px * var(--tsh)), 17px); line-height: 1.15; white-space: nowrap; }
-.wd-tab small { font-size: clamp(15px, calc(15px * var(--tsh)), 17px); font-weight: 600; white-space: nowrap; color: var(--muted); }
+.wd-tab-label { font-size: calc(15px * var(--ts)); line-height: 1.15; white-space: normal; overflow-wrap: break-word; hyphens: none; text-align: center; }
+/* headers at 15px or more: Your look, Yours · 9 of 16, the fold counts */
+.wd-hero-cap b, .wd-h, .wd-fold > summary small { font-size: calc(15px * var(--ts)); }
+/* larger text: the hero grows so the caption sits under the pieces instead of over them */
+.wd-hero { height: auto; min-height: calc(150px + 60px * (var(--ts) - 1)); }
+.wd-hero-stage { bottom: auto; height: 104px; }
+/* the quiet "Your packs · N" row at the bottom of each tab and the matching line on Shop › Packs */
+.wd-packs-link, .shop-packs-yours { min-height: 56px; margin-top: var(--space-4); }
+.wd-packs-ico { width: 54px; height: 30px; flex: none; }
+.shop-packs-yours b, .wd-packs-link b { font-size: calc(16px * var(--ts)); }
+/* Your packs sheet: one row per pack, one Wear it button, no prices */
+.wd-packs-sheet { max-height: calc(100dvh - 32px); display: flex; flex-direction: column; }
+.wd-pack-list { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 4px; overflow-y: auto; min-height: 0; text-align: left; }
+.wd-pack-row { display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 8px 10px; border-radius: 16px; background: var(--well, rgba(0,0,0,.2)); }
+.wd-pack-prev { width: 44px; height: 44px; flex: none; }
+.wd-pack-row .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wd-pack-row b { font-size: calc(17px * var(--ts)); line-height: 1.2; overflow-wrap: break-word; hyphens: none; }
+.wd-pack-row small { font-size: calc(15px * var(--ts)); color: var(--muted); }
+.wd-pack-wear { flex: none; min-height: 48px; display: inline-flex; align-items: center; gap: 6px; }
+.wd-pack-wear.on { opacity: 1; color: var(--ink-gold, var(--gold)); background: none; border: 0; box-shadow: none; text-shadow: none; padding: 8px 4px; }
+.wd-pack-wear svg { width: 18px; height: 18px; }
+.wd-packs-sheet .wd-restore { margin-top: 4px; }
 /* Wardrobe cards: 3 across at text size 1, 2 across at 1.5 so names like "Follow progress" break between words */
 .wd-grid.tall { grid-template-columns: repeat(auto-fill, minmax(calc(96px + (var(--ts) - 1) * 80px), 1fr)); }
 .wd-name { font-size: calc(16px * var(--tsh)); }
@@ -2404,10 +2410,6 @@ body.calm .finish-marks .bl svg, body.calm .cafe-star-pop .star { transition: no
 .result-card .cafe-next .btn.cafe-go { margin-top: 4px; min-height: 48px; }
 .result-card .cafe-next-line { margin: 6px 0 0; line-height: 1.3; font-size: calc(16px * var(--ts)); text-wrap: balance; }
 .result-card .cafe-next-line b { font-weight: 800; }
-.streak-note.quiet { margin: 2px 0; }
-/* the café look: warm gold Warm Streak pips (the Cosmic look keeps its blue) */
-:root:not([data-look="cosmic"]) .streak-pips i { border-color: #d9a441; }
-:root:not([data-look="cosmic"]) .streak-pips i.on { background: #f2b84b; border-color: #c98a1e; box-shadow: 0 0 6px rgba(242, 184, 75, .8); }
 /* constellation, café look: a light card ("Chapter 1 finished") */
 :root:not([data-look="cosmic"]) .card.obs-done.cafe-look .obs-kicker { color: #8a5a10; letter-spacing: .04em; }
 :root:not([data-look="cosmic"]) .card.obs-done.cafe-look .obs-big { background: radial-gradient(circle at 50% 40%, #fff6e3, #f1dcb6); }
@@ -2494,7 +2496,6 @@ body.calm .finish-marks .bl svg, body.calm .cafe-star-pop .star { transition: no
 .result-card .reward-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px 18px; margin: 10px 0 4px; }
 .result-card .reward-chip { display: inline-flex; align-items: center; gap: 8px; font-size: calc(20px * var(--tsh)); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .result-card .reward-chip .coin { width: 28px; height: 28px; }
-.result-card .closing-line { margin: 6px 4px; font-size: calc(16px * var(--tsh)); }
 .result-card .result-note-slot { margin: 8px 4px 0; font-size: calc(16px * var(--tsh)); line-height: 1.3; text-wrap: balance; color: var(--text); }
 .result-card .badge-line { margin: 4px 0; font-size: calc(16px * var(--tsh)); color: var(--muted); }
 .result-card .rc-actions { display: grid; grid-auto-rows: 1fr; gap: 10px; margin-top: 14px; } /* both buttons share one height (UI rule 2) */

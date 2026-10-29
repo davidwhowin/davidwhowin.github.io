@@ -12,7 +12,6 @@ import { zenBest, ZEN_COIN_CAP } from '../meta/zen.js';
 import { SOUND_BACKDROPS, normSoundBackdrop } from '../meta/soundBackdrop.js';
 import { SOUND_COLLECTIONS, COLLECTION_BACKDROPS, SOUND_PREVIEW_SECONDS, canUseBackdrop, chipPrice, playableBackdrop, startSoundPreview } from '../meta/soundCollections.js';
 import { STEADY_FAILS } from '../meta/steadyStart.js';
-import { STREAK_MAX } from '../meta/winStreak.js';
 import { levelTipText, levelTipLabel } from '../meta/levelTips.js';
 import { mechanicIntro, SECOND_CUP_NOTE, SECOND_CUP_FIRST } from '../meta/mechanicIntro.js';
 import { winNote, runHighlight } from '../meta/resultNote.js'; // the one note slot on result cards (docs/UX_RESULT_CARDS.md)
@@ -69,7 +68,7 @@ import { CONSTELLATIONS, observatoryState, completedCount, chapterView, progress
 import { paintConstellation, animateConstellation } from './observatoryArt.js';
 import { runPostcard, constellationPostcard, nebulaPostcard, postcardCaption } from '../meta/postcard.js';
 import { renderPostcard, sharePostcard, fontsReady } from './postcardArt.js';
-import { showWardrobe } from './wardrobe.js';
+import { showWardrobe, showPacksSheet } from './wardrobe.js';
 import { challengeLinkHtml, bindChallengeLink, showFriendEnter, canChallenge, showFriendSend } from './challengeView.js'; // Challenge a friend
 import { shopTabFor, coinBonusPct, starterValueLine, noAdsBundleLine, packAllLine, passYearLine, packCarouselOrder, collectionLine, todayCount, lookCardAction, coinsNeededLine,
   SHOP_TABS, SHOP_TAB_LABELS, SHOP_TAB_CURRENCY, COIN_CONFIRM_MIN, coinBuyNeedsConfirm, isCozyLook, BACKGROUND_LINES, PASS_NAME, SHOP_PREVIEW_COUNT, sectionPreview, bundleSaveLine, EARN_COINS_LINE,
@@ -82,7 +81,7 @@ import { COPY as LESSON_COPY } from '../meta/firstRun.js';
 import { uiLook } from '../meta/looks.js';
 import { unlocked } from '../meta/onboarding.js';
 import { cafeSummary, taskStyle } from '../meta/cafe.js';
-import { tomorrowGift, tomorrowLine, collectedLine, giftOutcomeLine, eveningOneGiftDue, nextFix, streakLineShown, plainStreakLine } from '../meta/menuCards.js';
+import { tomorrowGift, tomorrowLine, collectedLine, giftOutcomeLine, eveningOneGiftDue, nextFix } from '../meta/menuCards.js';
 import { bakeOfferDue } from '../meta/bakes.js'; // Tonight's bake: the oven card on the way out (docs/UX_TONIGHTS_BAKE.md)
 import { showOvenCard } from './bakeView.js';
 import { TIP_IDS, TIP_LEAD, TIP_FINE, tipThanks, hasTipJar } from '../meta/tips.js'; // thank-you tip (About only)
@@ -96,7 +95,7 @@ const goalText = (g, short) => goalCopy(rawGoalText(g, short), pageLook());
 // Wardrobe: a coat hanger
 export const WARDROBE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.2a2.2 2.2 0 1 1 2.2-2.2c0 1.1-.8 1.6-1.4 2-.5.3-.8.7-.8 1.3v.4"/><path d="M12 8.7 3.4 15.2c-.9.7-.4 2.1.7 2.1h15.8c1.1 0 1.6-1.4.7-2.1L12 8.7z"/></svg>';
 
-export const BUILD = 'v0.6.45';
+export const BUILD = 'v0.6.46';
 
 const root = () => $('#screens');
 const click = () => Svc.sfx('ui');
@@ -1646,11 +1645,15 @@ function packContentsLine(pack) {
  */
 function renderPacks(app, list, rerender) {
   const save = app.save;
-  const order = packCarouselOrder(save, new Date());
+  const all = packCarouselOrder(save, new Date());
+  // packs owned in full fold into one line at the end that opens Your packs (docs/UX_PURCHASES_TAB.md §5 item 2):
+  // this tab stays about what can still be got; a part-owned pack keeps its card (its "Get the rest" lives there)
+  const order = all.filter((p) => !ownsPack(save, p));
+  const ownedFull = all.length - order.length;
   const n = order.length;
-  if (!n) return;
+  if (!all.length) return;
   list.appendChild(el(`<h3 class="shop-sub">${esc(tr('shop.packs'))} <small>${esc(tr('shop.packs.sub'))}</small></h3>`));
-  const limit = shopOpenSections.has('packs') ? n : SHOP_PREVIEW_COUNT.packs;
+  const limit = shopOpenSections.has('packs') ? n : Math.min(n, SHOP_PREVIEW_COUNT.packs);
   const heroes = [];
   order.slice(0, limit).forEach((pack, i) => {
     const offers = packOffers(save, pack);
@@ -1708,6 +1711,11 @@ function renderPacks(app, list, rerender) {
     heroes.push({ card, pack, hero: null, seen: false });
   });
   showAllButton(list, 'packs', n - limit, trp('shop.showMorePacks', n - limit, { n: n - limit }), rerender, n > SHOP_PREVIEW_COUNT.packs);
+  if (ownedFull) {
+    const yours = el(`<button class="wd-link shop-packs-yours" data-packs-yours>${WARDROBE_ICON}<span><b>${esc(trp('shop.packsYours', ownedFull, { n: fmt(ownedFull) }))}</b></span><i aria-hidden="true">›</i></button>`);
+    tap(yours, () => showPacksSheet(app, rerender), click);
+    list.appendChild(yours);
+  }
 
   // Paint every hero right away as a still frame (no blank card while a throttled tab holds back animation frames),
   // then animate only the cards on screen.
@@ -3273,33 +3281,9 @@ export function showZenOver(app, res, { onAgain, onHome }) {
   return node;
 }
 
-/** Journey results (win or fail). */
-/**
- * Nova Streak note on a Journey result (src/meta/winStreak.js): charge pips + one honest, calm line.
- * Information only: no button, no price, no ad, no countdown, never "don't lose it".
- */
-function streakNoteHtml(st, level = 99) {
-  if (!st || !st.line) return '';
-  let pips = '';
-  for (let i = 0; i < STREAK_MAX; i++) pips += `<i class="${i < st.charges ? 'on' : ''}"></i>`;
-  // docs/UX_RETENTION.md item 6: the line only when the charge count changed; a steady 3/3 shows the pips alone
-  // (labelled). Before Level 11 (where Wild Sugar is introduced) it names the gift in plain words (café look only).
-  const line = pageLook() === 'cosmic' ? st.line : plainStreakLine(st.line, level);
-  if (!streakLineShown(st)) return `<div class="streak-note quiet"><span class="streak-pips" role="img" aria-label="${esc(line)}">${pips}</span></div>`;
-  return `<div class="streak-note"><span class="streak-pips" aria-hidden="true">${pips}</span><span>${esc(line)}</span></div>`;
-}
-
-/** "Closing time" bonus line on a Journey win card (src/game/closing.js): the spare drops and the points they added. */
-function closingLineHtml(c, short = false) {
-  if (!c || !(c.drops > 0)) return '';
-  // large text (docs/UX_RETENTION.md item 7b): "Closing time: +3,750 · +5 coins"
-  // docs/UX_RESULT_CARDS.md §1 block 4: "Closing time: 10 spare drops → +2,500 points" (large text: "Closing time:
-  // +2,500 points"). Its coins are already inside the card's "+N coins" chip, so they are not repeated here.
-  const pts = `<span class="closing-coins">${esc(tr('result.closing.points', { n: c.score.toLocaleString('en-US') }))}</span>`;
-  if (short) return `<p class="closing-line"><b>${esc(tr('result.closing.label'))}</b> ${pts}</p>`;
-  return `<p class="closing-line"><b>${esc(tr('result.closing.label'))}</b> <span class="closing-coins">${esc(trp('result.closing.drops', c.drops, { n: c.drops.toLocaleString('en-US') }))}</span> <span class="closing-coins">→ ${esc(tr('result.closing.points', { n: c.score.toLocaleString('en-US') }))}</span></p>`;
-}
-
+/** Journey results (win or fail). Warm Streak and Closing time work silently: the owner asked for no line on any
+ * result card (docs/UX_RESULT_CARDS.md, "Silent effects"). The streak still grants Wild Sugar and the closing points
+ * still count in the score; nothing about them is shown here. */
 // ---- one meaning for ★ (docs/UX_STARS.md): the café star vs. the 1–3 finish rating
 
 /** The 1–3 rating marks: blossoms (filled = earned, outline = not yet) or, in the Cosmic look, four-point sparkles.
@@ -3361,7 +3345,6 @@ export function showLevelResult(app, res, { onNext, onRetry, onMap, onDone, onSk
       <h2>${esc(tr('result.levelFailed', { n: res.level }))}</h2>
       ${res.autoplay ? autoplayNote() : ''}
       ${res.reflection ? reflectionHtml(res.reflection) : `${res.remaining ? `<p>${esc(res.remaining)}</p>` : ''}<p>${esc(tr('result.everyAttempt'))}</p>`}
-      ${streakNoteHtml(res.streak, res.level)}
       ${keeperLineHtml(app, 'fail')}
       <button class="btn primary" data-retry>${esc(tr('result.tryAgain'))}</button>
       <button class="btn ghost" data-map>${esc(tr('result.levels'))}</button>
@@ -3374,9 +3357,9 @@ export function showLevelResult(app, res, { onNext, onRetry, onMap, onDone, onSk
     tap(node.querySelector('[data-tester-skip]'), () => { close(node); onSkip(); }, click);
     return;
   }
-  // docs/UX_RESULT_CARDS.md §1: one job per card. Title, one hero, one rewards row, the closing line, one note; then
+  // docs/UX_RESULT_CARDS.md §1: one job per card. Title, one hero, one rewards row, one note; then
   // Play on (the only filled button), one outlined way out of the same height, a quiet row and the ad fine print.
-  // The café task lives on Home now (Pip names it there), the closing-time rule is taught on the board, and the
+  // The café task lives on Home now (Pip names it there), Warm Streak and Closing time are silent, and the
   // Journal / season lines, stop teaser, keeper line and Levels link moved to their own screens. Same for every ad state.
   // One meaning for ★ (docs/UX_STARS.md §3): a first clear earns ONE café star; the 1–3 rating is a word plus blossoms.
   const firstClear = !!res.firstTime;
@@ -3387,19 +3370,17 @@ export function showLevelResult(app, res, { onNext, onRetry, onMap, onDone, onSk
     : `${finishLineHtml(res.stars, 'hero')}${prev > 0 ? `<p class="best-line">${esc(res.stars > prev ? tr('result.newBestFinish') : tr('result.bestHere', { word: finishWord(prev) }))}</p>` : ''}`;
   // rewards: "★ +1 for the café" (first clear) and "+55 coins" (everything this card paid, closing coins included)
   const rewardsHtml = `<div class="reward-row">${firstClear ? `<span class="reward-chip star-chip" aria-hidden="true">${tr('result.starLine', { star: '<span class="ink-star">★</span>' })}</span>` : ''}${coinChipHtml()}</div>`;
-  // the note slot (src/meta/resultNote.js): goodnight > gift > streak changed > tricky > the one-time replay explainer
+  // the note slot (src/meta/resultNote.js): goodnight > gift > tricky > the one-time replay explainer
   const giftSkin = res.gift && res.gift.skin ? (SKINS.find((k) => k.id === res.gift.skin) || {}) : null;
   const note = winNote({
     goodnight: full && !!goodnightNoteHtml(res, save),
     gift: !!giftSkin,
-    streak: res.level >= 3 && !!(res.streak && res.streak.line && streakLineShown(res.streak)),
     tricky: full && res.kind !== 'normal',
     replay: !firstClear && !res.autoplay && !(save.mechSeen && save.mechSeen.replayStar),
   });
   let noteHtml = '';
   if (note === 'goodnight') noteHtml = goodnightNoteHtml(res, save);
   else if (note === 'gift') noteHtml = `<p class="result-note-slot gift-note">${esc(tr('result.giftNote', { name: giftSkin.name || res.gift.skin }))}</p>`;
-  else if (note === 'streak') noteHtml = streakNoteHtml(res.streak, res.level);
   else if (note === 'tricky') noteHtml = `<p class="result-note-slot">${esc(res.kind === 'superhard' ? tr('result.trickySuper') : tr('result.tricky'))}</p>`;
   else if (note === 'replay') {
     noteHtml = `<p class="result-note-slot replay-note">${esc(res.coins > 0 ? tr('result.replayNoteCoins') : tr('result.replayNote'))}</p>`;
@@ -3416,7 +3397,6 @@ export function showLevelResult(app, res, { onNext, onRetry, onMap, onDone, onSk
     ${res.autoplay ? autoplayNote() : ''}
     <div class="rc-hero">${heroHtml}</div>
     ${rewardsHtml}
-    ${closingLineHtml(res.closing, big)}
     ${noteHtml}
     <div class="rc-actions"><button class="btn primary" data-next>${esc(tr('result.playOn'))}</button>${outHtml}</div>
     ${quiet.length ? `<div class="quiet-row">${quiet.join('')}</div>` : ''}

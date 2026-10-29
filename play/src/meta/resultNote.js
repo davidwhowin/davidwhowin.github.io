@@ -2,8 +2,9 @@
 // single line by a fixed priority, and the rest wait for a later card or live elsewhere. Pure: no DOM, no text.
 // Presentation only; never reads or depends on ad state, the device or spending.
 
-/** Journey win note priority (§1): goodnight > gift > streak changed > tricky bonus > the one-time replay explainer. */
-export const WIN_NOTE_ORDER = Object.freeze(['goodnight', 'gift', 'streak', 'tricky', 'replay']);
+/** Journey win note priority (§1): goodnight > gift > tricky bonus > the one-time replay explainer.
+ * Warm Streak is not a note any more: it works silently (owner's call, docs/UX_RESULT_CARDS.md "Silent effects"). */
+export const WIN_NOTE_ORDER = Object.freeze(['goodnight', 'gift', 'tricky', 'replay']);
 
 /**
  * Which note a Journey win card shows, or null for none. `due` holds a flag per candidate (true = it applies now).

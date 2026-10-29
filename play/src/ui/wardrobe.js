@@ -11,11 +11,11 @@ import { OUTFIT_BY_ID } from '../meta/outfits.js';
 import { Svc } from '../meta/services.js';
 import { unlocked } from '../meta/onboarding.js';
 import {
-  wardrobeCategories, wardrobeCategory, wardrobeItems, wardrobeCounts, equipWardrobe, ownedPacks, currentLook, wardrobeSections,
+  wardrobeCategories, wardrobeCategory, wardrobeItems, wardrobeCounts, equipWardrobe, ownedPacks, currentLook, wardrobeSections, wearPack,
 } from '../meta/wardrobe.js';
 import { pageLook } from './copy.js';
 import { t as tr, tp as trp } from './i18n.js';
-import { showShop, toast } from './screens.js';
+import { showShop, toast, openScreen, closeScreen } from './screens.js';
 import './looksWardrobe.js'; // registers the Board and Combo tabs
 
 const click = () => Svc.sfx('ui');
@@ -111,10 +111,73 @@ function heroHtml(save) {
   </div>`;
 }
 
-function purchasesHtml(save) {
+/** Text size 1.3 and up: the tab grid goes to 2 columns and stops being sticky (docs/UX_PURCHASES_TAB.md 3b). */
+const bigText = (save) => Number(save && save.settings && save.settings.textSize) >= 1.3;
+
+/**
+ * The quiet "Your packs · N ›" row at the bottom of each tab (docs/UX_PURCHASES_TAB.md 3a). Only with at least one
+ * owned pack piece; with none there is no row and no "buy a pack" note.
+ */
+export function packsRowHtml(save) {
   const packs = ownedPacks(save);
-  if (!packs.length) return `<p class="wd-buys none">${esc(tr('wardrobe.buysNone'))}</p>`;
-  return `<div class="wd-buys"><b>${esc(tr('wardrobe.myPurchases'))}</b>${packs.map((p) => `<span class="wd-pack-chip${p.complete ? ' full' : ''}">${esc(tr('wardrobe.packChip', { name: p.name }))} <small>${esc(p.complete ? tr('wardrobe.allPieces') : tr('wardrobe.somePieces', { owned: p.owned, total: p.total }))}</small></span>`).join('')}</div>`;
+  if (!packs.length) return '';
+  const label = tr('wardrobe.packsRow', { n: packs.length.toLocaleString('en-US') });
+  return `<button class="wd-link wd-packs-link" data-packs aria-label="${esc(label)}"><canvas class="wd-packs-ico" data-packs-ico aria-hidden="true"></canvas><span><b>${esc(label)}</b></span><i aria-hidden="true">›</i></button>`;
+}
+
+/** The skin the row's little icon shows: the pack being worn, else the first owned pack. */
+function packsIconSkin(save) {
+  const packs = ownedPacks(save);
+  const on = packs.find((p) => p.wearing) || packs[0];
+  return on ? on.skin : null;
+}
+
+/** The Your packs sheet: one row per owned pack with one Wear it button; Restore purchases and Close. No prices. */
+export function packsSheetHtml(save) {
+  const packs = ownedPacks(save);
+  const rows = packs.map((p) => {
+    const pieces = p.complete ? tr('wardrobe.pack.all', { total: p.total }) : tr('wardrobe.somePieces', { owned: p.owned, total: p.total });
+    const act = p.wearing
+      ? `<button class="btn small wd-pack-wear on" disabled>${CHECK}<span>${esc(tr('wardrobe.pack.wearing'))}</span></button>`
+      : `<button class="btn small primary wd-pack-wear" data-wear-pack="${esc(p.id)}" aria-label="${esc(tr('wardrobe.pack.wear'))}: ${esc(p.name)}">${esc(tr('wardrobe.pack.wear'))}</button>`;
+    return `<div class="wd-pack-row" data-pack="${esc(p.id)}"><canvas class="wd-pack-prev" data-pack-prev="${esc(p.skin)}" aria-hidden="true"></canvas>
+      <span class="grow"><b>${esc(p.name)}</b><small>${esc(pieces)}</small></span>${act}</div>`;
+  }).join('');
+  return `<div class="screen modal"><div class="card wd-packs-sheet">
+    <h2>${esc(tr('wardrobe.packsSheet.title'))}</h2>
+    <p>${esc(tr('wardrobe.packsSheet.line'))}</p>
+    <div class="wd-pack-list">${rows}</div>
+    <button class="linkish wd-restore" data-restore>${esc(tr('shop.restore'))}</button>
+    <button class="btn primary" data-x>${esc(tr('common.close'))}</button>
+  </div></div>`;
+}
+
+/**
+ * Your packs sheet (a sheet in the same style as Today). Wear it puts on what is owned of that pack (meta wearPack),
+ * shows one toast and redraws the sheet. onChange runs after a change so the screen under it repaints.
+ */
+export function showPacksSheet(app, onChange = null) {
+  const save = app.save;
+  const s = openScreen(el(packsSheetHtml(save)));
+  requestAnimationFrame(() => {
+    for (const cv of s.querySelectorAll('canvas[data-pack-prev]')) { try { paintOrbTrio(cv, cv.dataset.packPrev); } catch (_) { /* preview only */ } }
+  });
+  const redraw = () => { s.remove(); showPacksSheet(app, onChange); };
+  for (const b of s.querySelectorAll('[data-wear-pack]')) tap(b, () => {
+    const p = ownedPacks(save).find((x) => x.id === b.dataset.wearPack);
+    if (!p || !wearPack(save, p.id, { setSetting: app.setSetting })) return;
+    if (app.persist) app.persist();
+    if (Svc.haptic) Svc.haptic('light');
+    toast(tr('wardrobe.pack.toast', { name: p.name }), true, 1500);
+    if (onChange) onChange();
+    redraw();
+  }, click);
+  tap(s.querySelector('[data-restore]'), async () => {
+    if (Svc.restorePurchases) { await Svc.restorePurchases(); if (onChange) onChange(); redraw(); return; }
+    toast(tr('shop.restoreNone'), false, 3200);
+  }, click);
+  tap(s.querySelector('[data-x]'), () => closeScreen(s), click);
+  return s;
 }
 
 /**
@@ -138,7 +201,7 @@ export function showWardrobe(app, tab = null, onClose = null) {
   let heroPainted = false;
 
   const paintHero = () => {
-    heroHost.innerHTML = heroHtml(save) + purchasesHtml(save);
+    heroHost.innerHTML = heroHtml(save);
     const look = currentLook(save);
     requestAnimationFrame(() => {
       paintOrbTrio(heroHost.querySelector('[data-hero-orbs]'), look.skin, [3, 6, 9]);
@@ -153,14 +216,14 @@ export function showWardrobe(app, tab = null, onClose = null) {
   const renderTabs = () => {
     const cats = wardrobeCategories(save);
     const counts = wardrobeCounts(save);
+    // a grid: every tab visible, no sideways scroll; the owned count lives in the section heading and the aria-label
+    tabsEl.classList.toggle('big', bigText(save));
     tabsEl.innerHTML = cats.map((c) => {
       const n = counts[c.id];
       return `<button class="wd-tab${c.id === cur ? ' on' : ''}" role="tab" aria-selected="${c.id === cur}" data-cat="${esc(c.id)}"${n ? ` aria-label="${esc(tr('wardrobe.tabAria', { label: c.label, owned: n.owned, total: n.total }))}"` : ''}>
-        <span class="wd-tab-icon">${c.icon || ''}</span><span class="wd-tab-label">${esc(c.label)}</span>${n ? `<small>${n.owned}/${n.total}</small>` : ''}</button>`;
+        <span class="wd-tab-icon">${c.icon || ''}</span><span class="wd-tab-label">${esc(c.label)}</span></button>`;
     }).join('');
     for (const b of tabsEl.querySelectorAll('[data-cat]')) tap(b, () => { if (b.dataset.cat !== cur) render(b.dataset.cat); }, click);
-    const on = tabsEl.querySelector('.wd-tab.on');
-    if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   };
 
   const goTo = (item) => {
@@ -200,22 +263,29 @@ export function showWardrobe(app, tab = null, onClose = null) {
     // docs/UX_OPPORTUNITIES.md item 7: "Yours" first; the Cosmic style folded into its own collection (café look);
     // what can be got now behind "See more looks" in named collections; looks that only come with play aren't listed
     const sec = wardrobeSections(items, pageLook());
-    const countable = (l) => l.filter((x) => !x.auto && x.id != null).length;
+    const n = wardrobeCounts(save)[cur];
     const grid = (list) => `<div class="wd-grid${cat.preview === 'backdrop' ? ' tall' : ''}">${list.map((it) => cardHtml(cat, it)).join('')}</div>`;
     const fold = (key, label, n, inner) => `<details class="wd-fold" data-fold="${esc(key)}">
       <summary class="wd-fold-h"><span>${esc(label)}</span><small>${n}</small><i aria-hidden="true">›</i></summary>${inner}</details>`;
     const laterLine = sec.later ? `<p class="wd-note wd-later">${esc(trp('wardrobe.later', sec.later, { n: sec.later.toLocaleString('en-US') }))}</p>` : '';
     body.innerHTML = `
-      <h3 class="wd-h">${esc(tr('wardrobe.yours'))} <small>${countable(sec.yours) + countable(sec.starry)}</small></h3>
+      <h3 class="wd-h">${esc(n ? tr('wardrobe.yoursCount', { owned: n.owned.toLocaleString('en-US'), total: n.total.toLocaleString('en-US') }) : tr('wardrobe.yours'))}</h3>
       ${grid(sec.yours)}
       ${sec.starry.length ? fold('starry-own', tr('wardrobe.starry'), sec.starry.length, grid(sec.starry)) : ''}
       ${sec.moreCount ? fold('more', tr('wardrobe.seeMore'), sec.moreCount, sec.more.map((g) => `<h4 class="wd-h wd-sub-h">${esc(g.label)} <small>${g.items.length}</small></h4>${grid(g.items)}`).join('')) : ''}
       ${laterLine}
       ${!sec.moreCount && !sec.later ? `<p class="wd-note">${esc(tr('wardrobe.haveAll'))}</p>` : ''}
+      ${packsRowHtml(save)}
       ${extras ? `<button class="wd-link wd-shop-link" data-to-shop>${ICONS.shop}<span><b>Find more looks in the Shop</b><small>${esc(tr('wardrobe.shopLinkSub'))}</small></span><i>›</i></button>` : ''}
       <p class="wd-note">${esc(tr('wardrobe.cosmetic'))}</p>`;
     node.scrollTop = scrollY;
     // the Shop link: back to the Shop when the Shop opened this Wardrobe, otherwise the Shop over it
+    const packsBtn = body.querySelector('[data-packs]');
+    if (packsBtn) {
+      tap(packsBtn, () => showPacksSheet(app, () => render(cur)), click);
+      const ico = body.querySelector('[data-packs-ico]'), skin = packsIconSkin(save);
+      if (ico && skin) requestAnimationFrame(() => { try { paintOrbTrio(ico, skin); } catch (_) { /* icon only */ } });
+    }
     tap(body.querySelector('[data-to-shop]'), () => (shopBelow() ? goBack() : showShop(app, 'treats', () => render(cur))), click);
     for (const b of body.querySelectorAll('.wd-card')) {
       const it = items.find((x) => String(x.id == null ? '' : x.id) === b.dataset.id);
