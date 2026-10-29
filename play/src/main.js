@@ -40,6 +40,7 @@ import { weekDrop, weekTier, weekLevel, weekEndless, weekNebula, weeklyCardDue, 
 import { showWeeklyCard } from './ui/weeklyView.js';
 import { AD_RULES } from './ads/adRules.js';
 import { t } from './i18n/index.js';
+import { testerFromUrl, clearTester, canSkipRun, skipLevel } from './meta/tester.js'; // tester-only Skip level
 import { Renderer } from './game/renderer.js';
 import { Effects } from './game/effects.js';
 import { Game } from './game/game.js';
@@ -220,6 +221,9 @@ const app = {
   startFriend: (c) => guardSaved(() => startFriend(c)),
   resumeRun: () => resumeRun(),
   savedRun: () => savedRunInfo(),
+  // tester tools (?tester=1 on this device only; src/meta/tester.js): never shown to anyone else
+  tester: () => TESTER,
+  clearTester: () => { clearTester(localStorage); TESTER = false; },
   setSetting,
   setStatsSharing: (on) => setStatsSharing(on),
   resetStatsId: () => { resetStatsId(save); persist(); },
@@ -509,6 +513,8 @@ const autoAnimScale = () => (autoplay.enabled && game.run && game.run.autoplay ?
 autoplay.setEnabled(!!save.settings.autoplay);
 hud.setAuto(!!save.settings.autoplay);
 // the AUTO test pill shows only while Autoplay (test) is on, or with ?dev / #dev in the URL (docs/UX_FIRST_RUN.md Q4)
+// tester tools: ?tester=1 turns them on for this device (kept in localStorage), ?tester=0 turns them off
+let TESTER = (() => { try { return testerFromUrl(location.search + location.hash, localStorage); } catch (_) { return false; } })();
 const DEV_BUILD = (() => { try { return /[?&#]dev\b/.test(location.search + location.hash); } catch (_) { return false; } })();
 const autoVisible = () => DEV_BUILD || !!save.settings.autoplay;
 hud.setAutoVisible(autoVisible());
@@ -1406,13 +1412,38 @@ function pauseGame() {
   if (document.querySelector('#screens .screen')) return; // a modal is already up
   game.pause();
   Svc.sfx('ui');
+  const skipN = TESTER && canSkipRun(game.run) ? game.run.level.n : 0;
   UI.showPause(app, {
     journey: game.run.mode === 'journey',
     zen: !!game.run.zen,
     book: !!game.run.book,
     onResume: () => game.resume(),
     onQuit: () => { game.resume(); game.forfeit(); },
+    onSkip: skipN ? () => testerSkip(skipN) : null,
   });
+}
+
+/**
+ * Tester tools: "Skip level (tester)" (src/meta/tester.js). The attempt in progress is dropped without being booked
+ * (no forfeit, no onRunEnd, no stats or journal), the level is saved as a 1-star pass with the base coins, and the
+ * next level starts like "Play on" after a win, with no result card and no ad of any kind.
+ */
+function testerSkip(n) {
+  if (!TESTER) return;
+  tipUntilMerge = false;
+  if (game.run) game.quitToMenu();
+  journalDiscard(save); // the dropped attempt's drops are not kept
+  runFeats = [];
+  clearSnapshot();
+  endTrial();
+  hud.hideHint();
+  hud.hideKeeperSay();
+  const r = skipLevel(save, n);
+  if (r.constellation >= 0) pendingConstellation = r.constellation;
+  persist();
+  flushSave();
+  UI.toast(t('tester.skipped', { n }), true);
+  startLevel(Math.min(n + 1, LEVEL_COUNT));
 }
 
 /**
@@ -1621,6 +1652,8 @@ function onRunOver(res) {
       onMap: () => leaveResults(() => { goMenu(); UI.showMap(app); }, res.won && n >= AD_RULES.JOURNEY_FROM_LEVEL),
       // "Done for now" ends the session on the win: straight to the menu, no interstitial
       onDone: (o) => goMenu(o), // { quiet: true }: no Home card on this visit (docs/UX_RETENTION.md item 2)
+      // tester tools only: a lost level can be skipped from its card (the loss above stays booked as a normal fail)
+      onSkip: TESTER && !res.won && !res.tutorial && !res.friend ? () => testerSkip(n) : null,
     }), res.won ? 100 : 400);
     if (res.won && !res.tutorial) maybeAskReview(res);
     return;

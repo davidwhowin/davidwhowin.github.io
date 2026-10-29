@@ -109,9 +109,37 @@ export function interpolate(str, params) {
   return str.replace(/\{(\w+)\}/g, (m, k) => (Object.prototype.hasOwnProperty.call(params, k) && params[k] != null ? String(params[k]) : m));
 }
 
+/**
+ * Grammar variants (docs/LOCALISATION.md, "Grammar helpers"): params.gender ('m' | 'f' | 'n', from tierGender() or
+ * pieceGender()) picks `${key}.${gender}` when the current locale's own table has it, so a translation can agree an
+ * article or adjective with a tier name or the piece word. English never has these keys, so its text is unchanged.
+ */
+function variant(key, params, tables) {
+  const g = params && params.gender;
+  return g && has(tables[current], `${key}.${g}`) ? `${key}.${g}` : key;
+}
+
+/** The current locale's own text for `key` (no English fallback), or null. Grammar data: tier plurals and genders. */
+export function ownText(key, tables = CONTENT) {
+  const tbl = tables[current];
+  return has(tbl, key) ? tbl[key] : null;
+}
+
+/** The Intl.PluralRules category of `count` in the current locale ('one', 'other', ...). */
+export function pluralCategory(count) {
+  try { return new Intl.PluralRules(current === PSEUDO_ID ? 'en' : current).select(count); } catch (_) { return count === 1 ? 'one' : 'other'; }
+}
+
+/** "A, B and C" in the current locale (UI keys list.sep / list.last; English joins with ", " throughout). */
+export function listJoin(items) {
+  const a = (items || []).map(String);
+  if (a.length <= 1) return a.join('');
+  return a.slice(0, -1).join(t('list.sep')) + t('list.last') + a[a.length - 1];
+}
+
 /** Text for `key` in the current locale; falls back to English, then to the key itself so typos are visible. */
 export function t(key, params) {
-  const s = lookup(key);
+  const s = lookup(variant(key, params, TABLES));
   return interpolate(s == null ? key : s, params);
 }
 
@@ -124,9 +152,8 @@ export function tp(key, count, params) {
 }
 
 function pluralText(tables, key, count, params) {
-  let rule = count === 1 ? 'one' : 'other';
-  try { rule = new Intl.PluralRules(current === PSEUDO_ID ? 'en' : current).select(count); } catch (_) { /* keep the English rule */ }
-  const k = lookup(`${key}.${rule}`, tables) != null ? `${key}.${rule}` : `${key}.other`;
+  const rule = pluralCategory(count);
+  const k = variant(lookup(`${key}.${rule}`, tables) != null ? `${key}.${rule}` : `${key}.other`, params, tables);
   const s = lookup(k, tables);
   return interpolate(s == null ? k : s, { n: count, ...params });
 }
@@ -138,7 +165,7 @@ function pluralText(tables, key, count, params) {
 
 /** Content text for `key` (src/i18n/content/<locale>.js). */
 export function ct(key, params) {
-  const s = lookup(key, CONTENT);
+  const s = lookup(variant(key, params, CONTENT), CONTENT);
   return interpolate(s == null ? key : s, params);
 }
 

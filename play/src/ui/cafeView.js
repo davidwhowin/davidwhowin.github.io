@@ -40,6 +40,7 @@
 //   cafe.pulseProp(propId|null)   a dashed ring on one prop (the restyle tip)
 import {
   CAFE_AREAS, CAFE_AREA_BY_ID, CAFE_TASK_BY_ID, OUT_OF_CONTENT_LINE,
+  areaRef,
 } from '../meta/cafeData.js';
 import {
   areaState, buildTask, restyle, claimArea, currentArea, pendingCelebration, starsAvailable,
@@ -91,6 +92,7 @@ export function mountCafe(container, opts = {}) {
   const o = { controls: true, bubble: true, autoCelebrate: true, startLine: true, areaIntros: false, ...opts };
   const quiet = () => { try { return !!(o.quietBuild && o.quietBuild()); } catch { return false; } };
   const lowerThe = (s) => String(s || '').replace(/^The /, 'the ');
+  const ref = (a) => areaRef(a && a.id, a && a.name); // an area mid-sentence, in the locale's grammar (cafeData.js)
   let save = o.save;
   const live = o.keeperLive || keeperLiveDefault;
   const tw = new Tweener();
@@ -425,7 +427,7 @@ export function mountCafe(container, opts = {}) {
     // the camera is over an area that hasn't opened yet: say plainly when it opens (no padlock: it reads as a paywall)
     const ov = cur && !celebrating && overWas && overWas !== cur.id ? infoFor(overWas).state : null;
     const lockHud = ov && ov.status === 'locked'
-      ? `<div class="cafe-title-sub cafe-title-lock">${esc(tr('cafe.opensAfter', { area: ov.name, current: lowerThe(cur.name) }))}</div>` : '';
+      ? `<div class="cafe-title-sub cafe-title-lock">${esc(tr('cafe.opensAfter', { area: ov.name, current: ref(cur) }))}</div>` : '';
     const title = el('div', 'cafe-title', cur
       ? `<div class="cafe-title-name">${esc(cur.name)}</div><div class="cafe-prog" aria-hidden="true"><span style="width:${Math.round((st.built / st.total) * 100)}%"></span></div><div class="cafe-title-sub">${esc(tr('cafe.builtOf', { built: st.built, total: st.total }))}</div>${nextHud}${lockHud}`
       : `<div class="cafe-title-name">${esc(tr('cafe.name'))}</div><div class="cafe-title-sub">${esc(tr('cafe.allDone'))}</div>`);
@@ -825,7 +827,7 @@ export function mountCafe(container, opts = {}) {
     card.appendChild(gifts);
     // fix F8: where we go next, in one muted line (the area card behind keeps the finished area until "Lovely!")
     const nx = currentArea(save);
-    card.appendChild(el('p', 'cafe-card-next', esc(nx ? tr('cafe.nextArea', { area: lowerThe(nx.name) }) : tr('cafe.allCorners'))));
+    card.appendChild(el('p', 'cafe-card-next', esc(nx ? tr('cafe.nextArea', { area: ref(nx) }) : tr('cafe.allCorners'))));
     const row = el('div', 'cafe-card-row');
     if (o.onShare) {
       const s = el('button', 'cafe-btn cafe-btn-soft', esc(tr('cafe.sendPostcard')));
@@ -1003,8 +1005,8 @@ export function mountCafe(container, opts = {}) {
         // the first tap on a locked area teaches why once (T-later); after that, the short passing line. Both stay until tapped.
         if (!tipSeen(save, 'later')) {
           markTip(save, 'later'); emit({ type: 'tip', key: 'later' });
-          say(tr('cafeTour.tipLater', { area: lowerThe(st.name), current: lowerThe(cur.name) }), 0);
-        } else say(tr('pip.laterArea', { area: lowerThe(st.name), current: lowerThe(cur.name) }), 0);
+          say(tr('cafeTour.tipLater', { area: areaRef(id, st.name), current: ref(cur) }), 0);
+        } else say(tr('pip.laterArea', { area: areaRef(id, st.name), current: ref(cur) }), 0);
         return;
       }
       return;

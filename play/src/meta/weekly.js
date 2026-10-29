@@ -10,7 +10,7 @@
 //   seen: the Monday of the last week whose recap card was shown (the card shows once per week)
 // Migration: a save without `weekly` (or a malformed one) starts empty; the first week fills from now on.
 import { dayKey, daysBetween } from './daily.js';
-import { tierName, pieceWord } from '../game/tierNames.js';
+import { tierName, pieceWord, pieceGender } from '../game/tierNames.js';
 import { t } from '../i18n/index.js'; // text: UI keys weekly.* (docs/LOCALISATION.md phase 4c)
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -161,7 +161,7 @@ export function weekSummary(save, which = 'last', now = new Date(), skin) {
   else headline = days === 1 ? (tw ? t('weekly.daysThis.one', { n: fmt(days) }) : t('weekly.daysLast.one', { n: fmt(days) })) : (tw ? t('weekly.daysThis.other', { n: fmt(days) }) : t('weekly.daysLast.other', { n: fmt(days) }));
   const stats = [
     { value: fmt(week.m), label: t('weekly.merges') },
-    { value: week.top ? tierName(week.top, skin) : '—', label: t('weekly.biggest', { piece: pieceWord(false, skin) }), tier: true },
+    { value: week.top ? tierName(week.top, skin) : '—', label: t('weekly.biggest', { piece: pieceWord(false, skin), gender: pieceGender(skin) }), tier: true },
     { value: fmt(week.lv), label: t('weekly.levels') },
     { value: fmt(week.st), label: t('weekly.stars') },
     { value: t('weekly.daysOf', { n: days }), label: t('weekly.days') },

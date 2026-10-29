@@ -21,7 +21,7 @@
 // Steps not reached when a season ends simply end with it; everything granted stays.
 // Keepsake set names, lines, decoration names and frames are content text keepsake.* (src/i18n/content/en.js); season
 // names, token names and path step names are season.<id>.* (docs/LOCALISATION.md phase 4b).
-import { withText, ct, ctp, t, TEXT } from '../i18n/index.js';
+import { withText, ct, ctp, t, tp, TEXT, listJoin, ownText, pluralCategory } from '../i18n/index.js';
 
 /**
  * Seasons open once this Journey level is cleared AND she has played on SEASON_DAYS distinct days (a time-limited theme
@@ -332,8 +332,21 @@ export function awardRound(save, res, day) {
 /** The token name for a count ("1 apple", "3 apples"). */
 export function tokenWord(season, slot, n) {
   if (season && SEASON_BY_ID[season.id] === season && SLOTS.includes(slot)) return ctp(`season.${season.id}.token.${slot}`, n);
-  const w = (season && season.tokens[slot]) || [t('season.token.one'), t('season.token.other')];
-  return n === 1 ? w[0] : w[1];
+  const w = season && season.tokens[slot];
+  if (!w) return tp('season.token', n);
+  return pluralCategory(n) === 'one' ? w[0] : w[1]; // the locale's plural category (French "1,5", pt-BR 0 read "one")
+}
+
+/**
+ * The shared grammatical gender of a season's token words, for lines that say "a few" about them (French
+ * quelques-unes, Spanish unas cuantas): 'f' when every slot's word is feminine in the current locale's content table
+ * (season.<id>.token.<slot>.g), else 'm'. Undefined in English or for an unregistered season (no variant is picked).
+ */
+export function tokenGender(season, slots = SLOTS) {
+  if (!season || SEASON_BY_ID[season.id] !== season) return undefined;
+  const g = slots.map((s) => ownText(`season.${season.id}.token.${s}.g`));
+  if (!g[0]) return undefined;
+  return g.every((x) => x === 'f') ? 'f' : 'm';
 }
 
 /** One quiet line for the result card, e.g. "Autumn Harvest: +4 apples · New: Pumpkins by the café door". */
@@ -341,7 +354,7 @@ export function seasonLine(award) {
   if (!award || !award.added) return null;
   const { season, added, slot, granted } = award;
   const line = t('season.line', { name: season.name, n: added.toLocaleString('en-US'), tokens: tokenWord(season, slot, added) });
-  return granted.length ? t('season.lineNew', { line, names: granted.map((g) => g.name).join(', ') }) : line;
+  return granted.length ? t('season.lineNew', { line, names: listJoin(granted.map((g) => g.name)) }) : line;
 }
 
 /** Everything the season card shows, for `day`. Null outside a season. Read-only (does not switch seasons). */

@@ -13,7 +13,8 @@
 //
 // v3: the old Daily Missions are gone (src/meta/migrateV3.js paid any finished, uncollected mission once).
 import { mulberry32, hashString } from '../game/rng.js';
-import { aTierName, novaGoalText } from '../game/tierNames.js'; // display names (skin-aware)
+import { aTierName, novaGoalText, capFirst } from '../game/tierNames.js'; // display names (skin-aware)
+import { t as tr, tp as trp } from '../i18n/index.js'; // task words are UI keys (orbit.*, goal.*); English unchanged
 import { dayKey } from './daily.js';
 
 // v3: Stardust was cut, so its value moved into coins: +65 per task and +100 on the bonus (was [50, 70, 90] and 75).
@@ -23,18 +24,21 @@ export const ORBIT_COUNT = 3;
 
 // minStep: only offered once the player has that much experience (keeps day one gentle)
 const TEMPLATES = [
-  { type: 'tier', scope: 'best', targets: [5, 6, 7], text: (t, skin) => `Make ${aTierName(t, skin)}` },
-  { type: 'nebula', scope: 'count', targets: [1, 1, 1], text: () => 'Play the Daily Nebula' },
-  { type: 'combo', scope: 'best', targets: [3, 4, 5], text: (t) => `Reach combo ×${t}` },
-  { type: 'asteroids', scope: 'count', targets: [2, 4, 6], text: (t) => `Clear ${t} asteroids` },
-  { type: 'level', scope: 'count', targets: [1, 1, 2], text: (t) => (t > 1 ? `Clear ${t} Journey levels` : 'Clear a Journey level') },
-  { type: 'merges', scope: 'count', targets: [30, 60, 100], text: (t) => `Merge ${t} times` },
-  { type: 'sector', scope: 'best', targets: [2, 3, 4], text: (t) => `Reach sector ${t} in Endless` },
-  { type: 'score', scope: 'best', targets: [1500, 4000, 8000], text: (t) => `Score ${t.toLocaleString('en-US')} in one game` },
+  { type: 'tier', scope: 'best', targets: [5, 6, 7], text: (t, skin) => makeLine(aTierName(t, skin)) },
+  { type: 'nebula', scope: 'count', targets: [1, 1, 1], text: () => tr('orbit.nebula') },
+  { type: 'combo', scope: 'best', targets: [3, 4, 5], text: (t) => tr('goal.combo', { n: t }) },
+  { type: 'asteroids', scope: 'count', targets: [2, 4, 6], text: (t) => trp('orbit.asteroids', t) },
+  { type: 'level', scope: 'count', targets: [1, 1, 2], text: (t) => (t > 1 ? trp('orbit.levels', t) : tr('orbit.levelOne')) },
+  { type: 'merges', scope: 'count', targets: [30, 60, 100], text: (t) => trp('orbit.merges', t) },
+  { type: 'sector', scope: 'best', targets: [2, 3, 4], text: (t) => tr('orbit.sector', { n: t }) },
+  { type: 'score', scope: 'best', targets: [1500, 4000, 8000], text: (t) => tr('orbit.score', { n: t.toLocaleString('en-US') }) },
   { type: 'supernova', scope: 'count', targets: [1, 1, 1], minStep: 2, text: (t, skin) => novaGoalText(1, skin) },
 ];
 
 export const ORBIT_TYPES = TEMPLATES.map((t) => t.type);
+
+/** "Make a Moon" through goal.makeOne, the same line as the tier-10 goal (German "Einen Mond bauen"). */
+function makeLine(aName) { return tr('goal.makeOne', { aName, AName: capFirst(aName) }); }
 
 export function orbitText(o, skin) {
   const t = TEMPLATES.find((x) => x.type === o.type);

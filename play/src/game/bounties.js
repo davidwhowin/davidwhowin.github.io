@@ -5,7 +5,8 @@
 // spawn, tide and perk streams are never touched and every board transcript stays identical. A bounty never
 // changes the board, the score, the tide or a perk; it only adds a few coins to the run payout.
 import { mulberry32, deriveSeed } from './rng.js';
-import { aTierName } from './tierNames.js';
+import { aTierName, capFirst } from './tierNames.js';
+import { t, tp } from '../i18n/index.js'; // goal words only (UI keys bounty.*, goal.makeOne); English unchanged
 
 /** Goal kinds, in pick order (index = the seeded pick). Each reads a signal the game already emits. */
 export const BOUNTY_KINDS = Object.freeze(['tier', 'combo', 'asteroids', 'chain']);
@@ -74,10 +75,13 @@ export function trackBounty(b, type, value) {
 export function bountyText(b, skin) {
   if (!b) return '';
   switch (b.kind) {
-    case 'tier': return `Make ${aTierName(b.target >= 1 && b.target <= 10 ? b.target : 8, skin)}`;
-    case 'combo': return `Chain ×${b.target}`;
-    case 'asteroids': return b.target === 1 ? 'Break an asteroid' : `Break ${b.target} asteroids`;
-    case 'chain': return `${b.target.toLocaleString('en-US')} in one chain`;
+    case 'tier': {
+      const aName = aTierName(b.target >= 1 && b.target <= 10 ? b.target : 8, skin);
+      return t('goal.makeOne', { aName, AName: capFirst(aName) });
+    }
+    case 'combo': return t('bounty.combo', { n: b.target });
+    case 'asteroids': return b.target === 1 ? t('bounty.asteroidOne') : tp('bounty.asteroids', b.target);
+    case 'chain': return t('bounty.chain', { n: b.target.toLocaleString('en-US') });
     default: return '';
   }
 }

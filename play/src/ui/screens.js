@@ -5,7 +5,7 @@ import { t as tr, tp as trp, LOCALES, getLocale, setLocale } from './i18n.js'; /
 import { paintOrbCanvas, TIER_SHAPES, drawOrb } from '../game/orbArt.js';
 import { PERK_BY_ID, perkHint, PATH_BY_ID, perkPath, perkName, perkDesc, pathLine } from '../game/perks.js';
 import { testOptions } from '../game/autoplay.js';
-import { tierName, pieceWord, skinTierText } from '../game/tierNames.js'; // display names follow the orb skin
+import { tierName, pieceWord, pieceGender, skinTierText } from '../game/tierNames.js'; // display names follow the orb skin
 import { CHALLENGES, challengeLine, challengeBest, normChallenge } from '../meta/challenge.js';
 import { pathRows, lastPath } from '../meta/paths.js';
 import { zenBest, ZEN_COIN_CAP } from '../meta/zen.js';
@@ -96,7 +96,7 @@ const goalText = (g, short) => goalCopy(rawGoalText(g, short), pageLook());
 // Wardrobe: a coat hanger
 export const WARDROBE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.2a2.2 2.2 0 1 1 2.2-2.2c0 1.1-.8 1.6-1.4 2-.5.3-.8.7-.8 1.3v.4"/><path d="M12 8.7 3.4 15.2c-.9.7-.4 2.1.7 2.1h15.8c1.1 0 1.6-1.4.7-2.1L12 8.7z"/></svg>';
 
-export const BUILD = 'v0.6.44';
+export const BUILD = 'v0.6.45';
 
 const root = () => $('#screens');
 const click = () => Svc.sfx('ui');
@@ -2142,7 +2142,7 @@ export function showDailyReward(app, opts = {}) {
 
 // ==================================================================== PAUSE
 
-export function showPause(app, { onResume, onQuit, journey, zen = false, book = false }) {
+export function showPause(app, { onResume, onQuit, journey, zen = false, book = false, onSkip = null }) {
   const s = app.save.settings;
   const node = open(el(`<div class="screen modal"><div class="card">
     <h2>${esc(tr('pause.title'))}</h2>
@@ -2161,9 +2161,11 @@ export function showPause(app, { onResume, onQuit, journey, zen = false, book = 
     <div data-testopts></div>
     <p style="font-size:calc(15px * var(--ts));margin-top:14px">${esc(tr('pause.howto'))} ${esc(book ? tr('pause.howto.book') : journey ? tr('pause.howto.journey') : zen ? tr('pause.howto.zen') : tr('pause.howto.endless'))}</p>
     <button class="btn ghost" data-quit>${esc(book ? tr('pause.quit.book') : journey ? tr('pause.quit.journey') : tr('pause.quit.endless'))}</button>
+    ${testerSkipHtml(onSkip)}
   </div></div>`));
   tap(node.querySelector('[data-resume]'), () => { close(node); onResume(); }, click);
   tap(node.querySelector('[data-quit]'), () => { close(node); onQuit(); }, click);
+  tap(node.querySelector('[data-tester-skip]'), () => { close(node); onSkip(); }, click);
   for (const b of node.querySelectorAll('[data-set]')) {
     tap(b, () => {
       const k = b.dataset.set;
@@ -2187,6 +2189,11 @@ export function showPause(app, { onResume, onQuit, journey, zen = false, book = 
     }
   }), click);
   return node;
+}
+
+/** Tester tools only (main.js passes onSkip only while ?tester=1 is stored on this device): a quiet secondary row. */
+function testerSkipHtml(onSkip) {
+  return typeof onSkip === 'function' ? `<div class="quiet-row"><button class="linkish" data-tester-skip>${esc(tr('tester.skip'))}</button></div>` : '';
 }
 
 /** Autoplay test options (only while Autoplay is ON). They affect autoplay runs only, which are never saved. */
@@ -2364,6 +2371,7 @@ export function showMore(app, tab = null) {
         <h3 class="more-h3">${esc(tr('extras.testing'))}</h3>
         ${row(esc(tr('extras.autoplay.name')), esc(tr('extras.autoplay.sub')), sw('autoplay', !!save.settings.autoplay, tr('extras.autoplay.label')))}
         <div data-testopts></div>
+        ${app.tester && app.tester() ? row(esc(tr('tester.settings.name')), esc(tr('tester.settings.sub')), go(esc(tr('tester.settings.off')), 'data-tester-off')) : ''}
         <p class="more-build">${esc(tr('extras.build', { build: BUILD }))}</p>
       </div>`;
       for (const b of body.querySelectorAll('[data-kp]')) tap(b, () => showKeepers(app, b.dataset.kp, () => render()), click);
@@ -2403,6 +2411,7 @@ export function showMore(app, tab = null) {
       if (sid) tap(sid, () => { app.resetStatsId(); toast(tr('extras.statsId.done')); }, click);
       tap(body.querySelector('[data-set="autoplay"]'), () => { app.setSetting('autoplay', !save.settings.autoplay); render(); }, click);
       renderTestOptions(app, body.querySelector('[data-testopts]'));
+      tap(body.querySelector('[data-tester-off]'), () => { app.clearTester(); render(); }, click);
     },
   };
   function render() {
@@ -3244,7 +3253,7 @@ export function showZenOver(app, res, { onAgain, onHome }) {
     <div class="stats">
       <div class="stat"><b>${res.sector}</b><span>${esc(tr('result.stat.sector'))}</span></div>
       <div class="stat"><b>×${Math.max(1, res.maxCombo)}</b><span>${esc(tr('result.stat.combo'))}</span></div>
-      <div class="stat"><b style="font-size:15px;line-height:24px">${res.maxTier ? esc(tierName(res.maxTier)) : '—'}</b><span>${esc(tr('result.stat.biggest', { piece: pieceWord().toUpperCase() }))}</span></div>
+      <div class="stat"><b style="font-size:15px;line-height:24px">${res.maxTier ? esc(tierName(res.maxTier)) : '—'}</b><span>${esc(tr('result.stat.biggest', { piece: pieceWord().toUpperCase(), gender: pieceGender() }))}</span></div>
     </div>
     <div class="earn-row"><div class="earn"><span class="coin"></span><span data-earn>0</span></div></div>
     <p class="zen-note">${esc(tr('zenOver.note'))}</p>
@@ -3340,7 +3349,7 @@ function playRewardReveal(node, got) {
   return t + n * 320;
 }
 
-export function showLevelResult(app, res, { onNext, onRetry, onMap, onDone }) {
+export function showLevelResult(app, res, { onNext, onRetry, onMap, onDone, onSkip = null }) {
   const save = app.save;
   if (res.won && res.tutorial === 'first' && !res.tutorialSkipped && !res.autoplay) { showLessonWin(app, res, onDone || onMap); return; }
   // first session (src/meta/onboarding.js): through Level 4 the card is light.
@@ -3357,10 +3366,12 @@ export function showLevelResult(app, res, { onNext, onRetry, onMap, onDone }) {
       <button class="btn primary" data-retry>${esc(tr('result.tryAgain'))}</button>
       <button class="btn ghost" data-map>${esc(tr('result.levels'))}</button>
       ${full ? resultNotesHtml(res) : ''}
+      ${testerSkipHtml(onSkip)}
     </div></div>`));
     paintKeeperLine(node);
     tap(node.querySelector('[data-retry]'), () => { close(node); onRetry(); }, click);
     tap(node.querySelector('[data-map]'), () => { close(node); onMap(); }, click);
+    tap(node.querySelector('[data-tester-skip]'), () => { close(node); onSkip(); }, click);
     return;
   }
   // docs/UX_RESULT_CARDS.md §1: one job per card. Title, one hero, one rewards row, the closing line, one note; then

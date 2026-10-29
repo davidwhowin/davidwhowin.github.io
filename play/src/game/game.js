@@ -32,10 +32,10 @@ import { tierName } from './tierNames.js';
 import { newMoments, momentOpts, serveMoment, tickMoment, sanitizeRunMoments, momentResult, momentDropsLeft, momentWindow, MOMENT_COINS } from './moments.js';
 import { closingBonus, closingPace, CLOSING_POINTS } from './closing.js';
 import { teapotRefusal, CLOSING_SUB, tinTreatText } from '../meta/mechanicIntro.js';
-import { t as tr } from '../i18n/index.js'; // board text keys (closing.subFirst)
+import { t as tr, tp as trp } from '../i18n/index.js'; // board text keys (closing.subFirst) and the banners (banner.*); toasts stay English
 import { hudTextFactor } from './effects.js';
 import { pageLook, finishWord } from '../ui/copy.js';
-import { normKit, normFriend, whose, whoName } from '../meta/friendChallenge.js';
+import { normKit, normFriend, whose, whoName, whoGender } from '../meta/friendChallenge.js';
 import { puzzleReplay } from './puzzles.js';
 
 /** "LEVEL COMPLETE!" stays this long; Closing time starts after it (docs/UX_MECHANICS.md P5). */
@@ -44,7 +44,8 @@ const TUTORIAL_TOP_UP = 5; // the first-run lesson's quiet safety net (docs/UX_F
 const RNG_KEYS = ['rng', 'tideRng', 'perkRng', 'shuffleRng'];
 const localDayKey = (now = new Date()) => `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-const COMBO_NAMES = { 2: 'NICE', 3: 'STELLAR', 4: 'COSMIC', 5: 'GALACTIC', 6: 'LEGENDARY' };
+/** Chain banner name for combo ×2..×6+ (NICE, STELLAR, COSMIC, GALACTIC, LEGENDARY); literal keys so the key check sees them. */
+const comboName = (c) => (c <= 2 ? tr('banner.combo.2') : c === 3 ? tr('banner.combo.3') : c === 4 ? tr('banner.combo.4') : c === 5 ? tr('banner.combo.5') : tr('banner.combo.6'));
 
 export class Game {
   /**
@@ -233,10 +234,10 @@ export class Game {
     (async () => {
       this.syncVisuals(true);
       this.introAnimation();
-      const label = run.friend ? 'CHALLENGE' : run.nebula ? 'DAILY NEBULA' : level.kind === 'superhard' ? 'SUPER HARD' : level.kind === 'hard' ? 'HARD LEVEL' : `LEVEL ${level.n}`;
+      const label = run.friend ? tr('banner.challenge') : run.nebula ? tr('banner.dailyNebula') : level.kind === 'superhard' ? tr('banner.superHard') : level.kind === 'hard' ? tr('banner.hard') : tr('banner.level', { n: level.n });
       const color = run.nebula ? '#ff8ae0' : level.kind === 'superhard' ? '#ff4fd8' : level.kind === 'hard' ? '#ff8a5c' : '#9fd8ff';
       // a level that introduces a new rule starts quietly: the rule box is the one message (docs/UX_MECHANICS.md P1)
-      if (!opts.quietStart) this.fx.banner(label, color, [`${level.drops} drops`, steady ? 'Steady Start' : '', streakTag(streak)].filter(Boolean).join(' · '), { dur: 1.3, size: 0.85 });
+      if (!opts.quietStart) this.fx.banner(label, color, [trp('banner.drops', level.drops), steady ? tr('banner.steady') : '', streakTag(streak)].filter(Boolean).join(' · '), { dur: 1.3, size: 0.85 });
       await this.tw.wait(0.5);
       if (tok !== this.token) return;
       await this.boosterUnlockIntro();
@@ -280,7 +281,7 @@ export class Game {
       this.syncVisuals(true);
       if (!quiet) {
         this.introAnimation();
-        this.fx.banner(`PUZZLE ${p.n}`, '#9fd8ff', 'The pieces always come in this order', { dur: 1.3, size: 0.85 });
+        this.fx.banner(tr('banner.puzzle', { n: p.n }), '#9fd8ff', tr('banner.puzzleSub'), { dur: 1.3, size: 0.85 });
         await this.tw.wait(0.5);
       }
       if (tok !== this.token) return;
@@ -329,13 +330,13 @@ export class Game {
     if (won) {
       r.ended = true;
       this.state = 'over';
-      this.fx.banner('SOLVED', '#7cffb2', '', { dur: 1.2, size: 0.8 });
+      this.fx.banner(tr('banner.solved'), '#7cffb2', '', { dur: 1.2, size: 0.8 });
       Svc.sfx('win');
       Svc.haptic('success');
     } else {
       this.state = 'over'; // no Pause under the "out" card; bookRestart (Try again / Undo) starts playing again
       this.bookProgress();
-      this.fx.banner('NOT THIS TIME', '#a9bfe0', '', { dur: 1.0, size: 0.7 });
+      this.fx.banner(tr('banner.notThisTime'), '#a9bfe0', '', { dur: 1.0, size: 0.7 });
     }
     await this.tw.wait(won ? 1.0 : 0.8);
     if (tok !== this.token) return;
@@ -473,17 +474,17 @@ export class Game {
       this.syncVisuals(true);
       this.introAnimation();
       if (fk) {
-        this.fx.banner('CHALLENGE', '#ff9ae8', `${whose(run.friend)} score: ${run.friend.score.toLocaleString('en-US')}`, { dur: 2, size: 0.85 });
+        this.fx.banner(tr('banner.challenge'), '#ff9ae8', tr('friend.banner.score', { who: whoName(run.friend), n: run.friend.score.toLocaleString('en-US'), gender: whoGender(run.friend) }), { dur: 2, size: 0.85 });
       } else if (lucky) {
-        this.fx.banner('LUCKY START!', '#7cffb2', '+2 comets · calmer first tide', { dur: 2.2, size: 0.8 });
+        this.fx.banner(tr('banner.lucky'), '#7cffb2', tr('banner.luckySub'), { dur: 2.2, size: 0.8 });
         this.ui.toast && this.ui.toast('Lucky Start: +2 comets and a calmer first tide. Good luck!');
       } else if (daily) {
-        this.fx.banner('DAILY', '#ffd54a', 'Same orbs for everyone today', { dur: 1.6, size: 0.9 });
+        this.fx.banner(tr('banner.daily'), '#ffd54a', tr('banner.dailySub'), { dur: 1.6, size: 0.9 });
       } else if (zen) {
-        this.fx.banner('ZEN DRIFT', '#b8c8ff', 'No tide · end whenever you like', { dur: 1.6, size: 0.85 });
+        this.fx.banner(tr('banner.zen'), '#b8c8ff', tr('banner.zenSub'), { dur: 1.6, size: 0.85 });
       } else {
-        const sub = [tier === 'standard' ? '' : (tier === 'gentle' ? 'Gentle tide' : 'Bold tide'), pathId ? `${PATH_BY_ID[pathId].name} Path` : ''].filter(Boolean).join(' · ');
-        this.fx.banner('SECTOR 1', '#9fd8ff', sub, { dur: 1.2, size: 0.85 });
+        const sub = [tier === 'standard' ? '' : (tier === 'gentle' ? tr('banner.gentleTide') : tr('banner.boldTide')), pathId ? tr('banner.path', { name: PATH_BY_ID[pathId].name }) : ''].filter(Boolean).join(' · ');
+        this.fx.banner(tr('banner.sector', { n: 1 }), '#9fd8ff', sub, { dur: 1.2, size: 0.85 });
       }
       await this.tw.wait(0.5);
       if (tok !== this.token) return;
@@ -654,7 +655,7 @@ export class Game {
     (async () => {
       this.syncVisuals(true);
       this.introAnimation();
-      this.fx.banner('WELCOME BACK', '#9fd8ff', 'Your run is right where you left it', { dur: 1.3, size: 0.75 });
+      this.fx.banner(tr('banner.welcomeBack'), '#9fd8ff', tr('banner.welcomeBackSub'), { dur: 1.3, size: 0.75 });
       await this.tw.wait(0.5);
       if (tok !== this.token) return;
       this.busy = false;
@@ -1053,7 +1054,7 @@ export class Game {
   }
 
   celebrateBest() {
-    this.fx.banner(this.run && this.run.friend ? "YOU'RE AHEAD!" : 'NEW BEST!', '#ffd54a', '', { dur: 1.6, y: 0.22 });
+    this.fx.banner(this.run && this.run.friend ? tr('banner.ahead') : tr('banner.newBest'), '#ffd54a', '', { dur: 1.6, y: 0.22 });
     this.fx.burst(this.renderer.w / 2, 60, ['#ffd54a', '#fff2a8', '#ff9a3c'], 50, 360, 4, { gravity: 300 });
     Svc.sfx('newbest');
     Svc.haptic('success');
@@ -1366,9 +1367,9 @@ export class Game {
       r.maxCombo = Math.max(r.maxCombo, combo);
       this.track('combo', combo);
       if (combo >= 2 && !step.supernovas.length) {
-        const name = COMBO_NAMES[Math.min(6, combo)] || 'LEGENDARY';
+        const name = comboName(combo);
         const colors = ['#9fd8ff', '#9fd8ff', '#7cffb2', '#ffd54a', '#ff6ad5', '#ff8a5c', '#ff4fd8'];
-        this.fx.banner(`${name} ×${combo}`, colors[Math.min(6, combo)], combo === 2 ? 'Chain reaction!' : '', { dur: 0.95, size: 0.72 + Math.min(0.45, combo * 0.07), style: chainBannerStyle(this.fxSkin) });
+        this.fx.banner(tr('banner.comboLine', { name, n: combo }), colors[Math.min(6, combo)], combo === 2 ? tr('banner.chainReaction') : '', { dur: 0.95, size: 0.72 + Math.min(0.45, combo * 0.07), style: chainBannerStyle(this.fxSkin) });
         Svc.sfx('combo', { combo });
         if (combo >= 4) Svc.haptic('heavy');
       }
@@ -1401,7 +1402,7 @@ export class Game {
         this.fx.shake(22);
         this.fx.hitStop(0.12);
         this.fx.glow(x, y, '#ff9cf0', R.L.cell * (sn.radius + 2), 0.7, 0.7);
-        this.fx.banner('SUPERNOVA!', '#ff4fd8', `+${sn.points.toLocaleString('en-US')}`, { dur: 1.6, size: 1 });
+        this.fx.banner(tr('banner.supernova'), '#ff4fd8', `+${sn.points.toLocaleString('en-US')}`, { dur: 1.6, size: 1 });
         this.fx.burst(x, y, ['#ffffff', '#ff4fd8', '#7ad7ff', '#ffd54a'], 120, 520, 5, { life: 1.1, gravity: 120 });
         this.fx.ring(x, y, '#ffffff', R.L.cell * (sn.radius + 1.5) * 1.4, 0.6, 10);
         this.fx.ring(x, y, '#ff4fd8', R.L.cell * (sn.radius + 1.5) * 2.2, 0.9, 6);
@@ -1561,7 +1562,7 @@ export class Game {
       this.track('sector', r.sector);
       if (this.onSector) this.onSector(r.sector); // presentation hook (nebula shift), never rules
       this.updateHud();
-      this.fx.banner(`SECTOR ${r.sector}`, '#9fd8ff', 'Choose a perk', { dur: 1.1, size: 0.9 });
+      this.fx.banner(tr('banner.sector', { n: r.sector }), '#9fd8ff', tr('banner.choosePerk'), { dur: 1.1, size: 0.9 });
       Svc.sfx('perk');
       // Resonance (Paths): once it is on, every new sector pulses once, before the perk offer
       if (resonanceActive(r.path, r.owned)) this.resonate(false);
@@ -1657,7 +1658,7 @@ export class Game {
     if (p.evolution) {
       // Constellation formed: bigger celebration
       const R = this.renderer;
-      this.fx.banner('CONSTELLATION!', '#ffd54a', perkName(p.id, pageLook()), { dur: 2.0, size: 0.95 });
+      this.fx.banner(tr('banner.constellation'), '#ffd54a', perkName(p.id, pageLook()), { dur: 2.0, size: 0.95 });
       this.fx.flash('#fff2c4', 0.4);
       this.fx.shake(6);
       this.fx.burst(R.w / 2, R.h * 0.4, ['#ffd54a', '#ffffff', p.color, '#fff2a8'], 90, 420, 4, { life: 1.1, gravity: 80 });
@@ -1687,9 +1688,9 @@ export class Game {
     }
     r.dropsUntilTide += g.tide;
     const P = PATH_BY_ID[r.path];
-    const what = g.comets ? '+1 comet' : g.wild ? 'Wild orb' : g.tide ? `Tide +${g.tide}` : 'Tide is full';
+    const what = g.comets ? tr('banner.res.comet') : g.wild ? tr('banner.res.wild') : g.tide ? tr('banner.res.tide', { n: g.tide }) : tr('banner.res.full');
     if (this.renderer && this.renderer.L) {
-      this.fx.banner(first ? 'RESONANCE!' : 'RESONANCE', P.color, `${P.name} · ${what}`, { dur: first ? 1.8 : 1.1, size: first ? 0.85 : 0.7 });
+      this.fx.banner(first ? tr('banner.resonanceFirst') : tr('banner.resonance'), P.color, `${P.name} · ${what}`, { dur: first ? 1.8 : 1.1, size: first ? 0.85 : 0.7 });
       this.fx.burst(this.renderer.w / 2, this.renderer.L.aimY, [P.color, '#ffffff'], first ? 50 : 24, 260, 3);
     }
     Svc.haptic(first ? 'medium' : 'light');
@@ -1904,7 +1905,7 @@ export class Game {
     const stars = starsFor(lv, r.dropsLeft);
     try { this.hud.hideHint && this.hud.hideHint(); } catch (_) { /* presentation only */ }
     // café looks: the finish word under the banner (★ is only the café star, UX_STARS.md); Cosmic keeps its stars
-    this.fx.banner('LEVEL COMPLETE!', '#7cffb2', pageLook() === 'cosmic' ? '★'.repeat(stars) : finishWord(stars).toUpperCase(), { dur: WIN_BANNER_DUR, size: 0.8 });
+    this.fx.banner(tr('banner.levelComplete'), '#7cffb2', pageLook() === 'cosmic' ? '★'.repeat(stars) : finishWord(stars).toUpperCase(), { dur: WIN_BANNER_DUR, size: 0.8 });
     // fanfare scales with the stars actually earned (1 star = one modest burst, 3 = the full show)
     const wj = winJuice(stars);
     if (wj.flash) this.fx.flash('#d8ffe8', wj.flash);
@@ -2046,7 +2047,7 @@ export class Game {
     r.undo = null; // a fail (and any paid continue after it) ends the undo window
     Svc.haptic('heavy');
     this.fx.shake(6);
-    const title = reason === 'drops' ? 'OUT OF DROPS' : reason === 'tide' ? 'OVERFLOW!' : 'NO ROOM!';
+    const title = reason === 'drops' ? tr('banner.outOfDrops') : reason === 'tide' ? tr('banner.overflow') : tr('banner.noRoom');
     this.fx.banner(title, '#ff8aa0', '', { dur: 1.0, size: 0.75 });
     await this.tw.wait(0.8);
     if (tok !== this.token) return;
@@ -2123,7 +2124,7 @@ export class Game {
     }
     if (r.level.tide) { r.tideK = r.level.tide; r.dropsUntilTide = r.level.tide; }
     // a continue is not a win: plain info, no fanfare
-    this.fx.banner(`+${extra} DROPS`, '#a9bfe0', '', { dur: 1.0, size: 0.7 });
+    this.fx.banner(trp('banner.moreDrops', extra), '#a9bfe0', '', { dur: 1.0, size: 0.7 });
     Svc.sfx('ui');
     this.updateHud();
     this.syncVisuals();
@@ -2245,7 +2246,7 @@ export class Game {
     Svc.haptic('heavy');
     this.fx.shake(10);
     this.fx.flash('#ff2255', 0.25);
-    this.fx.banner(reason === 'tide' ? 'OVERFLOW!' : 'NO ROOM!', '#ff6a8a', '', { dur: 1.1, size: 0.9 });
+    this.fx.banner(reason === 'tide' ? tr('banner.overflow') : tr('banner.noRoom'), '#ff6a8a', '', { dur: 1.1, size: 0.9 });
     await this.tw.wait(0.9);
     if (tok !== this.token) return;
 
@@ -2255,7 +2256,7 @@ export class Game {
     // Second Wind: free revive (perk)
     if (r.owned.secondWind && !r.secondWindUsed) {
       r.secondWindUsed = true;
-      this.fx.banner('SECOND WIND', '#a9bfe0', 'Your perk cleared some room', { dur: 1.4, size: 0.7 });
+      this.fx.banner(tr('banner.secondWind'), '#a9bfe0', tr('banner.secondWindSub'), { dur: 1.4, size: 0.7 });
       await this.doRevive(reason);
       return;
     }
@@ -2301,7 +2302,7 @@ export class Game {
     if (r.mode !== 'journey') {
       r.tideK = tideInterval(r.sector, r.mods.slowTide, r.challenge);
       r.dropsUntilTide = r.tideK;
-      this.fx.banner('CONTINUE', '#a9bfe0', 'Top 3 rows cleared', { dur: 1.1, size: 0.7 });
+      this.fx.banner(tr('banner.continue'), '#a9bfe0', tr('banner.continueSub'), { dur: 1.1, size: 0.7 });
       if (reason === 'tide') { this.momentTick(); this.flushMomentNote(); }
     }
     this.syncVisuals();

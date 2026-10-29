@@ -10,7 +10,7 @@
 // (it sits beside whatever the card already shows; "Goodnight" leaves without an interstitial). The nightly tally lives in
 // its own device-local key, not in the save, so it never travels in a transfer code and the save shape stays shared with C#.
 import { isEvening, eveningKey } from './evening.js';
-import { tp } from '../i18n/index.js'; // pure lookup, no UI imports (docs/LOCALISATION.md phase 4)
+import { tp, pluralCategory } from '../i18n/index.js'; // pure lookup, no UI imports (docs/LOCALISATION.md phase 4)
 
 export const CALM_MODES = ['off', 'night', 'always'];
 /** Minutes of play in one night (calm on) before the goodnight line may show. */
@@ -82,12 +82,17 @@ export function storeNight(st, storage = globalThis.localStorage) {
   try { storage.setItem(WIND_DOWN_KEY, JSON.stringify(st)); } catch { /* private mode: the line simply may show again */ }
 }
 
-/** Plain-language tally for the Goodnight still ("3 stars earned · 412 pieces merged"). */
-export function tallyLines(st, pieceWord = 'pieces') {
+/**
+ * Plain-language tally for the Goodnight still ("3 stars earned · 412 pieces merged"). `pieceWord` is the plural,
+ * `singular` the word for the locale's 'one' count (default: the plural without its "s") and `gender` its grammatical
+ * gender for tally.merged.<n>.<gender> variants.
+ */
+export function tallyLines(st, pieceWord = 'pieces', singular = null, gender = null) {
   const f = (v) => v.toLocaleString('en-US');
   const out = [];
   if (st.stars > 0) out.push(tp('tally.stars', st.stars, { n: f(st.stars) }));
-  out.push(tp('tally.merged', st.merges, { n: f(st.merges), piece: st.merges === 1 ? pieceWord.replace(/s$/, '') : pieceWord }));
+  const one = singular == null ? pieceWord.replace(/s$/, '') : singular;
+  out.push(tp('tally.merged', st.merges, { n: f(st.merges), piece: pluralCategory(st.merges) === 'one' ? one : pieceWord, gender }));
   return out;
 }
 

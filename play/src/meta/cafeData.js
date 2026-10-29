@@ -34,7 +34,7 @@
 //   Tasks are listed in the order the build sheet shows them (cheapest first).
 
 import { MORE_AREAS, MORE_BOOKS, cafeText } from './cafeDataBooks.js';
-import { withText, ct, TEXT, LINES } from '../i18n/index.js';
+import { withText, ct, TEXT, LINES, ownText, interpolate } from '../i18n/index.js';
 
 export const CAFE_VERSION = 2; // 2: awning-first terrace prices (v1 saves may keep the old ones, see cafe.js)
 export const AREA_REWARD_COINS = 300;
@@ -232,6 +232,20 @@ export const CAFE_AREAS = [
 ].map(cafeText).concat(MORE_AREAS);
 
 export const CAFE_AREA_BY_ID = Object.fromEntries(CAFE_AREAS.map((a) => [a.id, a]));
+
+/**
+ * An area named mid-sentence ("We'll get to {area}"). English lower-cases "The " ("the Pier"). A translation's content
+ * table says how: grammar.area.lower lower-cases the first letter of a name that carries its article (fr "la Terrasse",
+ * es "el Mostrador", pt "o Balcão"); grammar.the.<g> with chapter.<id>.name.g puts the article in front (de "die
+ * Terrasse", nominative). docs/LOCALISATION.md, "Grammar helpers". C#: ContentText.AreaRef.
+ */
+export function areaRef(id, name) {
+  const s = String(name || '');
+  if (ownText('grammar.area.lower') != null) return s ? s[0].toLowerCase() + s.slice(1) : s;
+  const g = id ? ownText(`chapter.${id}.name.g`) : null;
+  const pat = g ? ownText(`grammar.the.${g}`) : null;
+  return pat ? interpolate(pat, { name: s }) : s.replace(/^The /, 'the ');
+}
 
 /** Every task across all areas, by id, with its area id: { [taskId]: { task, areaId, areaIndex } }. */
 export const CAFE_TASK_BY_ID = Object.fromEntries(CAFE_AREAS.flatMap((a, i) => a.tasks.map((t) => [t.id, { task: t, areaId: a.id, areaIndex: i }])));

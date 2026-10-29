@@ -109,7 +109,8 @@ export function nextFix(save) {
   const line = n.affordable
     ? t('nextFix.ready', { name, cost: cost.toLocaleString('en-US') })
     : t('nextFix.need', { name, n: n.need.toLocaleString('en-US') });
-  const pip = n.affordable ? t('nextFix.pip', { task: lc(name) }) : null;
+  // {task} is the name lower-cased for mid-sentence English; {name} keeps its case (German nouns)
+  const pip = n.affordable ? t('nextFix.pip', { task: lc(name), name }) : null;
   return { id, name, cost, affordable: n.affordable, need: n.need, line, pip };
 }
 

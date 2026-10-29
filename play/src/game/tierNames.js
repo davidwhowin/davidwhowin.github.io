@@ -11,7 +11,7 @@ import { SEA_NAMES } from './deepseaArt.js';
 import { GARDEN_NAMES } from './gardenArt.js';
 import { SEASIDE_NAMES } from './seasideArt.js';
 import { CAFE_CLASSICS_NAMES } from './cafeClassicsArt.js';
-import { ct, t } from '../i18n/index.js';
+import { ct, t, ownText, pluralCategory } from '../i18n/index.js';
 
 /**
  * Pack skins with their own tier names (index = tier, 1..10). Café Classics (the default look) names its café treats;
@@ -38,11 +38,39 @@ const NAME_SET = Object.freeze({ basic: 'seaside' });
  * tiers have a name.
  */
 export function tierName(tier, skin = currentSkin()) {
-  const names = PACK_TIER_NAMES[skin];
-  const set = NAME_SET[skin] || skin;
-  if (names && names[tier]) return ct(`tier.${set}.${tier}`);
-  return TIER_NAMES[tier] ? ct(`tier.cosmic.${tier}`) : '';
+  const k = nameKey(tier, skin);
+  return k ? ct(k) : '';
 }
+
+/** The content key of a tier's name under a skin (tier.<set>.<n>), or null when the tier has no name. */
+function nameKey(tier, skin) {
+  const names = PACK_TIER_NAMES[skin];
+  const set = names && names[tier] ? NAME_SET[skin] || skin : TIER_NAMES[tier] ? 'cosmic' : null;
+  return set ? `tier.${set}.${tier}` : null;
+}
+
+// ---------------------------------------------------------------- grammar (docs/LOCALISATION.md, "Grammar helpers")
+// English keeps the code grammar below (pluralName, withArticle), so its text is byte-identical. A translation that
+// defines grammar.a.<gender> ("ein {name}") instead reads its grammar from its own content table:
+//   tier.<set>.<n>.other  the plural name          tier.<set>.<n>.g  its gender: 'm' | 'f' | 'n'
+//   tier.<set>.<n>.a      the name with its indefinite article, when grammar.a.<g> does not fit (German weak nouns)
+//   word.piece.<0|1>.g    the gender of the look's piece word (0 = café pieces, 1 = cosmic orbs)
+// and picks gendered sentence variants (key.m / key.f / key.n) through the `gender` param of t() / ct().
+
+/** True when the current locale reads its grammar from its table (it defines grammar.a.m); false for English. */
+export const tableGrammar = () => ownText('grammar.a.m') != null;
+
+/** Upper-cases the first letter ("a Lighthouse" → "A Lighthouse", "einen Leuchtturm" → "Einen Leuchtturm"). */
+export const capFirst = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+
+/** Grammatical gender of a tier name in the current locale ('m' | 'f' | 'n'; 'm' when the table has none). */
+export function tierGender(tier, skin = currentSkin()) {
+  const k = nameKey(tier, skin);
+  return (k && ownText(`${k}.g`)) || 'm';
+}
+
+/** Grammatical gender of the look's piece word ("piece" / "orb") in the current locale. */
+export const pieceGender = (skin = currentSkin()) => ownText(`word.piece.${hasPackNames(skin) ? 0 : 1}.g`) || 'm';
 
 // Words that stay the same in the plural (Japanese loanwords, koi, fry, dust, plankton, shrimp; any "...fish").
 const SAME_PLURAL = new Set(['dust', 'edamame', 'tamago', 'maki', 'nigiri', 'gunkan', 'koi', 'fry', 'plankton', 'shrimp']);
@@ -61,11 +89,20 @@ export function pluralName(name) {
 /** "a Moon", "an Ogon koi", "an Edamame", "an Éclair". */
 export const withArticle = (name) => (name ? `${/^[aeiouéÉ]/i.test(name) ? 'an' : 'a'} ${name}` : name);
 
-/** Tier name with "a" / "an" in front. */
-export const aTierName = (tier, skin = currentSkin()) => withArticle(tierName(tier, skin));
+/** Tier name with its indefinite article: "a Moon" / "an Ogon koi"; German "einen Leuchtturm" (grammar.a.<gender>). */
+export function aTierName(tier, skin = currentSkin()) {
+  const name = tierName(tier, skin);
+  if (!tableGrammar() || !name) return withArticle(name);
+  return ownText(`${nameKey(tier, skin)}.a`) || ct(`grammar.a.${tierGender(tier, skin)}`, { name });
+}
 
-/** Tier name, plural when n !== 1. */
-export const tierNameN = (tier, n, skin = currentSkin()) => (n === 1 ? tierName(tier, skin) : pluralName(tierName(tier, skin)));
+/** Tier name for a count of n: singular for n === 1 (the locale's 'one' category), else the plural. */
+export function tierNameN(tier, n, skin = currentSkin()) {
+  const name = tierName(tier, skin);
+  if (!tableGrammar()) return n === 1 ? name : pluralName(name);
+  if (pluralCategory(n) === 'one' || !name) return name;
+  return ownText(`${nameKey(tier, skin)}.other`) || name;
+}
 
 /** "3 Moons", "1 Tuna nigiri", "2 Sleepy loaves" (number formatted en-US). */
 export const tierCountText = (n, tier, skin = currentSkin()) => `${Number(n).toLocaleString('en-US')} ${tierNameN(tier, n, skin)}`;
@@ -76,7 +113,9 @@ export const tierCountText = (n, tier, skin = currentSkin()) => `${Number(n).toL
  */
 export function novaGoalText(n = 1, skin = currentSkin()) {
   if (!hasPackNames(skin)) return n > 1 ? t('goal.novaMany', { n }) : t('goal.novaOne');
-  return n > 1 ? t('goal.tier', { n, name: tierNameN(10, n, skin) }) : t('goal.makeOne', { aName: aTierName(10, skin) });
+  if (n > 1) return t('goal.tier', { n, name: tierNameN(10, n, skin) });
+  const aName = aTierName(10, skin);
+  return t('goal.makeOne', { aName, AName: capFirst(aName) });
 }
 
 // cosmic names, longest first so "Blue Giant" wins over a shorter match; plural forms too
@@ -91,6 +130,7 @@ const COSMIC_RE = new RegExp(`\\b(a |A )?(${COSMIC_FORMS.map((x) => x[0]).join('
  */
 export function skinTierText(text, skin = currentSkin()) {
   if (!text || !hasPackNames(skin)) return text;
+  if (tableGrammar()) return tableSkinTierText(text, skin);
   return text.replace(COSMIC_RE, (all, art, name) => {
     const [, t, plural] = COSMIC_FORMS.find((x) => x[0] === name);
     const n = plural ? pluralName(tierName(t, skin)) : tierName(t, skin);
@@ -100,5 +140,28 @@ export function skinTierText(text, skin = currentSkin()) {
   });
 }
 
-/** "orb" / "orbs" for the cosmic skins, "piece" / "pieces" for pack skins (their pieces are not orbs). */
-export const pieceWord = (plural = false, skin = currentSkin()) => (hasPackNames(skin) ? (plural ? 'pieces' : 'piece') : (plural ? 'orbs' : 'orb'));
+/**
+ * skinTierText for a locale with table grammar: the text holds the locale's own cosmic forms (singular, plural, the
+ * article form and its capitalised start, e.g. "Mond", "Monde", "einen Mond", "Einen Mond"), each swapped for the same
+ * form of the skin's name ("eine Tasse"). Longest form first; whole words only. C#: ContentText.SkinTierText.
+ */
+function tableSkinTierText(text, skin) {
+  const forms = [];
+  for (let t = 1; t < TIER_NAMES.length; t++) {
+    if (!TIER_NAMES[t]) continue;
+    const a = aTierName(t, 'classic');
+    forms.push([tierName(t, 'classic'), t, 's'], [tierNameN(t, 2, 'classic'), t, 'p'], [a, t, 'a'], [capFirst(a), t, 'A']);
+  }
+  const list = forms.filter((x, i) => x[0] && forms.findIndex((y) => y[0] === x[0]) === i).sort((a, b) => b[0].length - a[0].length);
+  const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`(?<!\\p{L})(${list.map((x) => esc(x[0])).join('|')})(?!\\p{L})`, 'gu');
+  return text.replace(re, (m) => {
+    const [, t, kind] = list.find((x) => x[0] === m);
+    if (kind === 'a') return aTierName(t, skin);
+    if (kind === 'A') return capFirst(aTierName(t, skin));
+    return kind === 'p' ? tierNameN(t, 2, skin) : tierName(t, skin);
+  });
+}
+
+/** "orb" / "orbs" for the cosmic skins, "piece" / "pieces" for pack skins (their pieces are not orbs); content word.piece(s).<0|1>. */
+export const pieceWord = (plural = false, skin = currentSkin()) => ct(`word.${plural ? 'pieces' : 'piece'}.${hasPackNames(skin) ? 0 : 1}`);

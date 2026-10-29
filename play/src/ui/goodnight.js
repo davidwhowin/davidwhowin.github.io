@@ -10,7 +10,7 @@ import { CAFE_AREAS, CAFE_AREA_BY_ID } from '../meta/cafeData.js';
 import { paintBackdrop, paintWater, renderArea, cacheBounds, PAINT_ORDER, setCafeNight, cafeNight } from '../game/cafeArt.js';
 import { paintNightSky } from '../game/cafeNight.js';
 import { tallyLines, storeCalmAsked } from '../meta/windDown.js';
-import { pieceWord } from '../game/tierNames.js';
+import { pieceWord, pieceGender } from '../game/tierNames.js';
 import { ovenRowHtml, bindOvenRow } from './bakeView.js'; // Tonight's bake: the oven row (docs/UX_TONIGHTS_BAKE.md)
 import { t as tr } from './i18n.js';
 
@@ -56,7 +56,7 @@ export function bindGoodnight(node, app) {
 export function showGoodnight(app) {
   const save = app.save;
   const st = app.goodnightTally ? app.goodnightTally() : { stars: 0, merges: 0 };
-  const lines = tallyLines(st, pieceWord(true));
+  const lines = tallyLines(st, pieceWord(true), pieceWord(false), pieceGender());
   let oven = '';
   try { oven = ovenRowHtml(save); } catch (e) { console.error(e); }
   const big = Number(save && save.settings && save.settings.textSize) >= 1.25;

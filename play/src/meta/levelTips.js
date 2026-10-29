@@ -6,7 +6,7 @@
 // beside an ad (main.js skips the post-level interstitial and hides the banner), never for autoplay.
 // Comfort toggle "Level tips" (settings.levelTips, default on).
 // Save: tips.shown { levelN: fail streak when the card was last shown }.
-import { tierName, tierNameN, hasPackNames, withArticle, pieceWord } from '../game/tierNames.js'; // display names (skin-aware)
+import { tierName, tierNameN, hasPackNames, aTierName, pieceWord, pieceGender, tierGender, tableGrammar, capFirst } from '../game/tierNames.js'; // display names (skin-aware)
 import { levelKind, LEVEL_COUNT } from '../game/levels.js';
 import { failStreak, shouldOfferSteady } from './steadyStart.js';
 import { t, ct } from '../i18n/index.js'; // pure lookup, no UI imports (docs/LOCALISATION.md phase 4)
@@ -34,27 +34,30 @@ export function levelTipText(level, skin) {
   const pack = hasPackNames(skin);
   // a pack skin's pieces are sushi, koi or cats, not orbs (display only)
   const orb = pieceWord(false, skin), orbs = pieceWord(true, skin);
+  const gender = pieceGender(skin); // a translation agrees "{orb}" lines through key.<gender> variants (English has none)
   const v = pick(2, n); // which of the two variants (asteroids, big tier)
   if (ast) return ct(`strategy.asteroids.${v}`, { orbs });
   if (level.tide) return ct('strategy.tide', { n: level.tide, orbs });
   if (nova) {
     return pack
-      ? ct('strategy.supernovaPack', { aName: withArticle(tierName(10, skin)).replace(/^a/, 'A'), from: tierNameN(9, 2, skin), orb })
+      ? ct('strategy.supernovaPack', { aName: capFirst(aTierName(10, skin)), from: tierNameN(9, 2, skin), orb, gender: tierGender(9, skin) })
       : ct('strategy.supernova');
   }
   if (tier && tier.tier >= 6) {
     const name = tierName(tier.tier, skin);
-    return ct(`strategy.bigTier.${v}`,{ name, aName: withArticle(name), orb, orbs });
+    return ct(`strategy.bigTier.${v}`, { name, aName: aTierName(tier.tier, skin), orb, orbs, gender });
   }
   if (combo && combo.count >= 3) return ct('strategy.combo', { count: combo.count, orbs });
-  if (score) return ct('strategy.score', { orb });
+  if (score) return ct('strategy.score', { orb, gender });
   if (tier) {
     const name = tierName(tier.tier, skin);
-    const from = pack ? tierNameN(tier.tier - 1, 2, skin) : tierName(tier.tier - 1, skin);
-    if (!pack) return from ? ct('strategy.tier', { name, from }) : ct('strategy.tierFirst', { name });
-    return from ? ct('strategy.tierPack', { name, from }) : ct('strategy.tierPackFirst', { name });
+    // English cosmic tips say "two Moon orbs" (singular); a translation names the plural ("zwei Monde")
+    const from = pack || tableGrammar() ? tierNameN(tier.tier - 1, 2, skin) : tierName(tier.tier - 1, skin);
+    const p = { name, aName: aTierName(tier.tier, skin), from, gender: tierGender(tier.tier - 1, skin) };
+    if (!pack) return from ? ct('strategy.tier', p) : ct('strategy.tierFirst', p);
+    return from ? ct('strategy.tierPack', p) : ct('strategy.tierPackFirst', p);
   }
-  return ct('strategy.calm', { orb });
+  return ct('strategy.calm', { orb, gender });
 }
 
 /** Short honest label: "22 drops · Hard". */

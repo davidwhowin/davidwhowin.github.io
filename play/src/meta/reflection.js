@@ -2,8 +2,8 @@
 // the goals, never at an RNG, and never changes anything. One short, kind, TRUE line plus one
 // tip after a Journey fail or an Endless game over. Never "so close!" unless it is true.
 // Pip's lines and tips are content text reflect.* (src/i18n/content/en.js, docs/LOCALISATION.md phase 3). tierCount
-// and the orb names stay English-built for now (phase 4, with the tier names).
-import { tierName, pluralName, hasPackNames } from '../game/tierNames.js'; // display names (skin-aware)
+// uses the locale's tier plurals (tierNameN); English keeps pluralName.
+import { tierName, tierNameN, pluralName, hasPackNames, tierGender } from '../game/tierNames.js'; // display names (skin-aware)
 import { ct, ctp } from '../i18n/index.js';
 
 const fmt = (n) => Math.floor(n || 0).toLocaleString('en-US');
@@ -12,8 +12,8 @@ const columnName = (i) => (i >= 0 && i < COLUMN_COUNT ? ct(`reflect.col.${i}`) :
 
 /** "1 Planet", "2 Moons", "3 Dust" (Dust has no plural); a pack skin uses its own names ("2 Tuna nigiri"). */
 export function tierCount(n, tier, skin) {
-  const name = tierName(tier, skin) || 'orb';
-  return `${fmt(n)} ${n === 1 ? name : pluralName(name)}`;
+  if (!tierName(tier, skin)) return `${fmt(n)} ${n === 1 ? 'orb' : pluralName('orb')}`;
+  return `${fmt(n)} ${tierNameN(tier, n, skin)}`; // the locale's plural (English: pluralName)
 }
 
 /** Plain read-only analysis of a board ({ cols, rows, cells }). */
@@ -56,7 +56,7 @@ const GOAL_TIPS = {
   get score() { return ct('reflect.tip.score'); },
   get combo() { return ct('reflect.tip.combo'); },
   get supernova() { // names follow the orb skin (display only)
-    return hasPackNames() ? ct('reflect.tip.supernovaPack', { big: pluralName(tierName(10)), from: pluralName(tierName(9)) })
+    return hasPackNames() ? ct('reflect.tip.supernovaPack', { big: tierNameN(10, 2), from: tierNameN(9, 2), gender: tierGender(9) })
       : ct('reflect.tip.supernova');
   },
 };

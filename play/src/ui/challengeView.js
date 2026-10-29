@@ -13,9 +13,9 @@ import { t as tr } from './i18n.js';
 import { dayKey, daysBetween } from '../meta/daily.js';
 import { showAdsInfo, toast, refreshCoins } from './screens.js'; // a function-only cycle (screens.js opens these sheets)
 import {
-  encodeFriend, decodeFriend, friendErrorText, sanitizeName, shareText, goalLine, resultText, whoName, whose,
+  encodeFriend, decodeFriend, friendErrorText, sanitizeName, shareText, goalLine, resultText, whoName,
   compareFriend, replyChallenge, rememberFriend, recentFriends, normFriend, starText, NAME_MAX,
-  claimGift, giftLine, GIFT_TEXT,
+  claimGift, giftLine, GIFT_TEXT, whoGender,
 } from '../meta/friendChallenge.js';
 
 const root = () => document.querySelector('#screens');
@@ -193,7 +193,7 @@ export function showFriendSend(app, res, base = null) {
 
 /** "Mum's challenge · Endless · Standard tide" row text for the recent list. */
 function recentRowHtml({ entry, challenge: c }, i) {
-  const title = entry.mine ? tr('friend.youSent', { text: resultText(c) }) : c.mode === 'nebula' ? tr('friend.whoseChallenge', { whose: whose(c), text: resultText(c) }) : tr('friend.whoseBeat', { whose: whose(c), n: fmt(c.score) });
+  const title = entry.mine ? tr('friend.youSent', { text: resultText(c) }) : c.mode === 'nebula' ? tr('friend.whoseChallenge', { who: whoName(c), text: resultText(c), gender: whoGender(c) }) : tr('friend.whoseBeat', { who: whoName(c), n: fmt(c.score), gender: whoGender(c) });
   let sub = puzzleLine(c);
   if (!entry.mine && entry.best != null) sub += c.mode === 'nebula' ? (entry.best.stars ? tr('friend.recentYou', { n: fmt(entry.best.drops), stars: starText(entry.best.stars) }) : tr('friend.recentNotSolved')) : tr('friend.recentBest', { n: fmt(entry.best) });
   return `<button class="fc-row" data-recent="${i}"><span><b>${esc(title)}</b><small>${esc(sub)}</small></span><span class="fc-go">${esc(tr('friend.playGo'))}</span></button>`;
@@ -299,7 +299,7 @@ export function showFriendResult(app, res, { onAgain, onHome }) {
   const mine = neb ? { stars: res.won ? res.stars : 0, drops: res.dropsUsed | 0 } : { score: Math.floor(res.score || 0) };
   const cmp = compareFriend(f, mine);
   const who = whoName(f);
-  const warm = cmp.outcome === 'win' ? tr('friend.warm.win', { who })
+  const warm = cmp.outcome === 'win' ? tr('friend.warm.win', { who, gender: whoGender(f) })
     : cmp.outcome === 'tie' ? tr('friend.warm.tie')
       : neb ? tr('friend.warm.nebula') : tr('friend.warm.toGo', { n: fmt(f.score - mine.score) });
   const best = res.friendEntry && res.friendEntry.best;
@@ -311,7 +311,7 @@ export function showFriendResult(app, res, { onAgain, onHome }) {
     ${cmp.outcome === 'win' ? `<div class="new-best">${esc(tr('friend.won'))}</div>` : ''}
     <h2>${esc(cmp.title)}</h2>
     ${res.autoplay ? autoplayNote() : ''}
-    <p>${esc(tr('friend.resultWhat', { whose: whose(f), puzzle: puzzleLine(f) }))}</p>
+    <p>${esc(tr('friend.resultWhat', { who: whoName(f), puzzle: puzzleLine(f), gender: whoGender(f) }))}</p>
     <div class="fc-vs" role="group" aria-label="${esc(cmp.line)}">
       <div class="${cmp.outcome !== 'lose' ? 'lead' : ''}"><span>${esc(tr('friend.you'))}</span><b class="${neb ? 'fc-neb' : ''}" data-mine>${neb ? val(mine) : '0'}</b></div>
       <div class="${cmp.outcome !== 'win' ? 'lead' : ''}"><span>${esc(who)}</span><b class="${neb ? 'fc-neb' : ''}">${val(f)}</b></div>
@@ -322,7 +322,7 @@ export function showFriendResult(app, res, { onAgain, onHome }) {
     ${!neb && res.coins > 0 ? `<div class="earn-row"><div class="earn"><span class="coin"></span><span>+${fmt(res.coins)}</span></div></div>` : ''}
     <p class="fc-small">${esc(tr('friend.separate'))}</p>
     <button class="btn primary hero" data-again>${esc(tr('friend.tryAgain'))}</button>
-    ${res.autoplay ? '' : `<button class="btn pink" data-reply>${esc(cmp.outcome === 'win' ? tr('friend.sendBack') : tr('friend.sendScore', { who }))}</button>`}
+    ${res.autoplay ? '' : `<button class="btn pink" data-reply>${esc(cmp.outcome === 'win' ? tr('friend.sendBack') : tr('friend.sendScore', { who, gender: whoGender(f) }))}</button>`}
     <button class="btn ghost" data-home>${esc(tr('result.home'))}</button>
     ${res.adLine && !res.autoplay ? `<button class="result-note ad-note" data-adinfo aria-label="${esc(tr('result.adLineLabel', { line: res.adLine }))}">${esc(res.adLine)} <span class="ad-why">${esc(tr('result.adWhy'))}</span></button>` : ''}
   </div></div>`));

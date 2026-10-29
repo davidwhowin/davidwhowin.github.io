@@ -1,7 +1,8 @@
 // "Challenge a friend" (DESIGN.md): a short code that carries one exact puzzle (seed, tide tier and the
 // starting kit) plus the sender's result, so a friend or grandchild plays the identical orb sequence and
-// compares. Pure data, no DOM and no imports, so C# can port it byte-for-byte (tests/friend-challenge.test.mjs
-// prints fixture vectors).
+// compares. Pure data, no DOM, so C# can port it byte-for-byte (tests/friend-challenge.test.mjs prints fixture
+// vectors). The only import is the i18n table: the words at the bottom are UI keys (friend.*) whose English is
+// the old text. decodeFriend finds the code anywhere in a message, so a translated message parses the same way.
 //
 // Code: "NC1-" + base64url(payload) + "." + 6 hex checksum (FNV-1a 32 of the body text, first 6 hex digits),
 // the same style as the progress transfer code (src/meta/transfer.js).
@@ -25,6 +26,8 @@
 // kept in save.friends.gifts = { day: 'YYYY-MM-DD' of the last gift opened ('' = none), got: [checksums of opened
 // codes, oldest first, at most GIFT_KEEP] }. Gifts are sent, never requested: no asking, no reminders, no streaks. No links, no IDs, no device data: only the puzzle and the sender's own result.
 
+import { t, tp } from '../i18n/index.js';
+
 export const FRIEND_PREFIX = 'NC1-';
 export const MAX_SCORE = 999999999;
 export const NAME_MAX = 16; // characters (code points)
@@ -38,13 +41,14 @@ export const PATHS = [null, 'gravity', 'fusion', 'tide'];
 export const NEB_TWISTS = Object.freeze(['plain', 'orders', 'glaze', 'teapot', 'tin', 'relaxed',
   'orders+glaze', 'orders+teapot', 'orders+tin', 'glaze+teapot', 'glaze+tin', 'teapot+tin']);
 
+/** Error words by decodeFriend() error code (UI keys friend.err.<code>, read when shown). */
 export const FRIEND_ERRORS = {
-  empty: 'Paste the challenge code first.',
-  notcode: 'That doesn\'t look like a challenge code. It starts with NC1-',
-  newer: 'This challenge came from a newer version of Nova\'s Café. Please update the game, then try again.',
-  corrupt: 'That code is incomplete or has a typo. Ask them to send it again, or copy the whole message.',
-  invalid: 'That code doesn\'t hold a puzzle this game can play. Ask them to send it again.',
-  future: 'That puzzle\'s day hasn\'t arrived here yet. Try again tomorrow.',
+  get empty() { return t('friend.err.empty'); },
+  get notcode() { return t('friend.err.notcode'); },
+  get newer() { return t('friend.err.newer'); },
+  get corrupt() { return t('friend.err.corrupt'); },
+  get invalid() { return t('friend.err.invalid'); },
+  get future() { return t('friend.err.future'); },
 };
 
 // ---------------------------------------------------------------- byte helpers (same as transfer.js)
@@ -321,32 +325,36 @@ export function friendErrorText(err) {
 
 const n = (v) => Math.floor(v || 0).toLocaleString('en-US');
 
-/** "Mum", or "Your friend" when the code had no name. */
-export function whoName(c) { return (c && c.name) || 'Your friend'; }
-/** "Mum's", "Your friend's". */
+/** "Mum", or "Your friend" (friend.someone) when the code had no name. */
+export function whoName(c) { return (c && c.name) || t('friend.someone'); }
+/**
+ * The `gender` param for a line that names the sender: 'anon' when the code had no name, so a translation can say
+ * "a challenge for you" (key.anon) instead of "from Your friend" (docs/LOCALISATION.md, "Grammar helpers").
+ */
+export const whoGender = (c) => (c && c.name ? undefined : 'anon');
+/** "Mum's", "Your friend's" (English shape; translated lines put {who} in a whole sentence instead). */
 export function whose(c) { return `${whoName(c)}'s`; }
 export const starText = (s) => '★'.repeat(s) + '☆'.repeat(3 - s);
 
 /** What the sender did: "12,340" (Endless) / "solved in 14 drops ★★★" / "not solved yet". */
 export function resultText(c) {
-  if (c.mode === 'nebula') return c.stars > 0 ? `solved in ${n(c.drops)} drops ${starText(c.stars)}` : 'not solved yet';
+  if (c.mode === 'nebula') return c.stars > 0 ? tp('friend.res.solved', c.drops, { n: n(c.drops), stars: starText(c.stars) }) : t('friend.res.notYet');
   return n(c.score);
 }
 
 /** "Mum's challenge: beat 12,340" (the enter-code card and the run banner). */
 export function goalLine(c) {
-  if (c.mode === 'nebula') return c.stars > 0 ? `${whose(c)} challenge: solve it in ${n(c.drops)} drops or fewer` : `${whose(c)} challenge: solve this puzzle`;
-  return `${whose(c)} challenge: beat ${n(c.score)}`;
+  const p = { who: whoName(c), gender: whoGender(c) };
+  if (c.mode === 'nebula') return c.stars > 0 ? tp('friend.goal.drops', c.drops, { ...p, n: n(c.drops) }) : t('friend.goal.solve', p);
+  return t('friend.goal.beat', { ...p, n: n(c.score) });
 }
 
 /** The message that goes with a code. No link: the code is all a friend needs. A gift adds one plain line. */
 export function shareText(c, code) {
-  const g = c.gift ? ` ${GIFT_TEXT.share}` : '';
-  if (c.mode === 'nebula') {
-    const d = c.stars > 0 ? `I solved this Nova's Café puzzle in ${n(c.drops)} drops ${starText(c.stars)}. Can you beat that?` : 'Can you solve this Nova\'s Café puzzle? It beat me!';
-    return `${d}${g} Code: ${code}`;
-  }
-  return `Can you beat my ${n(c.score)} in Nova's Café?${g} Code: ${code}`;
+  const gift = c.gift ? ` ${GIFT_TEXT.share}` : '';
+  const text = c.mode !== 'nebula' ? t('friend.share.endless', { n: n(c.score) })
+    : c.stars > 0 ? tp('friend.share.solved', c.drops, { n: n(c.drops), stars: starText(c.stars) }) : t('friend.share.unsolved');
+  return t('friend.share.code', { text, gift, code });
 }
 
 /**
@@ -354,15 +362,15 @@ export function shareText(c, code) {
  * `line` keys are giftStatus() results ('ready' is shown once the gift has been opened).
  */
 export const GIFT_TEXT = Object.freeze({
-  toggle: 'Add a little gift from the café',
-  note: `A little gift from the café rides along with your challenge: ${n(GIFT_COINS)} coins for them. The café pays, so your own coins stay yours.`,
-  share: `A little gift from the café rides along: ${n(GIFT_COINS)} coins.`,
+  get toggle() { return t('friend.gift.toggle'); },
+  get note() { return t('friend.gift.note', { n: n(GIFT_COINS) }); },
+  get share() { return t('friend.gift.share', { n: n(GIFT_COINS) }); },
   line: Object.freeze({
-    ready: `A little gift from the café came with this code: ${n(GIFT_COINS)} coins, now in your purse.`,
-    claimed: 'You have already opened the café gift on this code.',
-    today: 'You have opened a café gift today. This one will keep for another day.',
-    mine: 'This is the gift you sent. It opens for the person you send it to.',
-    future: 'This gift is dated a day that hasn\'t arrived here yet. It will keep.',
+    get ready() { return t('friend.gift.line.ready', { n: n(GIFT_COINS) }); },
+    get claimed() { return t('friend.gift.line.claimed'); },
+    get today() { return t('friend.gift.line.today'); },
+    get mine() { return t('friend.gift.line.mine'); },
+    get future() { return t('friend.gift.line.future'); },
   }),
 });
 
@@ -371,7 +379,7 @@ export function giftLine(status) { return GIFT_TEXT.line[status] || ''; }
 
 /** A short label for one run: "13,050" or "14 drops ★★★" / "not solved". */
 function shortResult(mode, r) {
-  if (mode === 'nebula') return r.stars > 0 ? `${n(r.drops)} drops ${starText(r.stars)}` : 'not solved';
+  if (mode === 'nebula') return r.stars > 0 ? tp('friend.short.drops', r.drops, { n: n(r.drops), stars: starText(r.stars) }) : t('friend.short.notSolved');
   return n(r.score);
 }
 
@@ -389,8 +397,8 @@ export function compareFriend(c, mine) {
     diff = ms !== c.stars ? ms - c.stars : ms === 0 ? 0 : c.drops - md;
   } else diff = Math.floor(mine.score || 0) - c.score;
   const outcome = diff > 0 ? 'win' : diff < 0 ? 'lose' : 'tie';
-  const line = `You ${shortResult(c.mode, mine)} · ${whoName(c)} ${shortResult(c.mode, c)}`;
-  const title = outcome === 'win' ? 'You won!' : outcome === 'tie' ? 'A perfect tie!' : 'So close, try again?';
+  const line = t('friend.cmp.line', { mine: shortResult(c.mode, mine), who: whoName(c), theirs: shortResult(c.mode, c), gender: whoGender(c) });
+  const title = outcome === 'win' ? t('friend.cmp.win') : outcome === 'tie' ? t('friend.cmp.tie') : t('friend.cmp.lose');
   return { outcome, line, title };
 }
 

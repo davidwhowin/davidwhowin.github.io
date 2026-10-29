@@ -9,6 +9,7 @@
 // quit before the first drop. Undo changes nothing here (the result decides).
 
 import { STREAK_MAX } from '../game/levels.js';
+import { tp } from '../i18n/index.js'; // the level-start banner tag (banner.streak)
 
 export { STREAK_MAX };
 
@@ -81,7 +82,7 @@ export function streakLine(info) {
 /** Short tag for the level-start banner ("" when no charges). */
 export function streakTag(charges) {
   const n = clampCharges(charges);
-  return n ? `Nova Streak +${orbs(n)}` : '';
+  return n ? tp('banner.streak', n) : '';
 }
 
 /** Save sanitiser: { charges: 0..3, shield: boolean }. */

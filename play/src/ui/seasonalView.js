@@ -10,7 +10,7 @@ import { dayKey } from '../meta/daily.js';
 import { seasonOpen } from '../meta/onboarding.js';
 import { uiLook } from '../meta/looks.js';
 import { word } from './copy.js';
-import { seasonView, markSeasonSeen, seasonAt, tokenWord, decorName, decorAll, keepsakesOffered, keepsakesOwned, KEEPSAKE_BY_ID } from '../meta/seasonal.js';
+import { seasonView, markSeasonSeen, seasonAt, tokenWord, tokenGender, decorName, decorAll, keepsakesOffered, keepsakesOwned, KEEPSAKE_BY_ID } from '../meta/seasonal.js';
 import { IAP } from '../meta/economy.js';
 import * as S from './screens.js'; // circular on purpose: only used inside functions, never at load time
 
@@ -105,7 +105,7 @@ export function seasonMoment(save, day = dayKey()) {
     key: 'season', at: ['today'], open: 'today', row: 'season',
     title: tr('season.moment.title', { name: season.name }),
     // short on purpose (UX_OPPORTUNITIES 8): the card sits in the button area, and a long text pushed the café up
-    text: tr('season.moment.text', { tokens: tokenWord(season, 'level', 2) }),
+    text: tr('season.moment.text', { tokens: tokenWord(season, 'level', 2), gender: tokenGender(season, ['level']) }),
     go: tr('season.moment.go'),
   };
 }
@@ -136,7 +136,7 @@ export function seasonCardHtml(save, day = dayKey()) {
     <p class="sn-when">${esc(tr('season.when', { name: season.short || season.name, end: season.endText }))}</p>
     <div class="sn-basket" aria-label="${trHtml(tr('season.basketAria'), { level: tok('level', v.bag.level), daily: tok('daily', v.bag.daily), free: tok('free', v.bag.free) })}">${basket}</div>
     <div class="sn-bar" aria-hidden="true"><i style="width:${pct}%"></i></div>
-    <p class="sn-how">${trHtml(tr('season.how', { dailyName: word('dailyPuzzle', look), freeName: word('freePlay', look) }), { level: bold(tokenWord(season, 'level', 2)), daily: bold(tokenWord(season, 'daily', 2)), free: bold(tokenWord(season, 'free', 2)) })}</p>
+    <p class="sn-how">${trHtml(tr('season.how', { dailyName: word('dailyPuzzle', look), freeName: word('freePlay', look), gender: tokenGender(season) }), { level: bold(tokenWord(season, 'level', 2)), daily: bold(tokenWord(season, 'daily', 2)), free: bold(tokenWord(season, 'free', 2)) })}</p>
     <ol class="sn-path">${steps}</ol>
     <p class="sn-keep">${esc(tr('season.keep'))}</p>
     ${keepsakesHtml(save, day)}

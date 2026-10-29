@@ -192,16 +192,18 @@ export function remainingText(level, prog, skin) {
     const left = g.count - prog[i];
     if (left <= 0) return;
     if (!goalClose(g, prog[i])) close = false;
-    if (g.type === 'tier') parts.push(`${left} ${tierNameN(g.tier, left, skin)}`);
-    else if (g.type === 'asteroids') parts.push(`${left} asteroid${left > 1 ? 's' : ''}`);
-    else if (g.type === 'score') parts.push(`${left.toLocaleString('en-US')} points`);
-    else if (g.type === 'supernova') parts.push(`${left} ${tierNameN(10, left, skin)}`);
-    else if (g.type === 'combo') parts.push(`a ×${g.count} combo`);
-    else if (g.type === 'order') parts.push(`${left} ${tierNameN(g.tier, left, skin)} to serve`);
-    else if (g.type === 'teapot') parts.push(`${left} teapot${left > 1 ? 's' : ''} to deliver`);
+    // UI keys goal.left.* (English text unchanged; the counts are plain digits as before, score en-US grouped)
+    if (g.type === 'tier') parts.push(t('goal.left.tier', { n: left, name: tierNameN(g.tier, left, skin) }));
+    else if (g.type === 'asteroids') parts.push(tp('goal.left.asteroids', left));
+    else if (g.type === 'score') parts.push(tp('goal.left.score', left, { n: left.toLocaleString('en-US') }));
+    else if (g.type === 'supernova') parts.push(t('goal.left.tier', { n: left, name: tierNameN(10, left, skin) }));
+    else if (g.type === 'combo') parts.push(t('goal.left.combo', { n: g.count }));
+    else if (g.type === 'order') parts.push(t('goal.left.order', { n: left, name: tierNameN(g.tier, left, skin) }));
+    else if (g.type === 'teapot') parts.push(tp('goal.left.teapot', left));
   });
   if (!parts.length) return '';
-  return close ? `Only ${parts.join(' and ')} left!` : `Still to go: ${parts.join(' and ')}.`;
+  const list = parts.join(t('goal.left.and'));
+  return close ? t('goal.left.close', { list }) : t('goal.left.open', { list });
 }
 
 export function starsFor(level, dropsLeft) {
